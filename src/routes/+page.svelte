@@ -50,20 +50,19 @@
 
     // 2. ค้นหาหนัง
     async function searchMovies(page: number = 1) {
-        if (!searchQuery.trim()) return;
+        // เช็กก่อนว่ามีคำค้นหาไหม
+        if (!searchQuery || !searchQuery.trim()) return;
         
         isLoading = true;
-        isSearching = true;
-        if (page === 1) selectedGenreId = null; // รีเซ็ตหมวดเฉพาะตอนค้นหาครั้งแรก
+        isSearching = true;       // บังคับเปิดโหมดค้นหา
+        selectedGenreId = null;   // เคลียร์ค่าหมวดหมู่ทิ้งทันที เพื่อไม่ให้ตีกัน
         currentPage = page;
         
         try {
-            // เปลี่ยนจาก hardcode 'page=1' เป็นตัวแปร '${page}' ที่ส่งเข้ามา
-            const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(`/search/movie?query=${encodeURIComponent(searchQuery)}&language=th-TH&page=${page}`)}`);
+            const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(`/search/movie?query=${encodeURIComponent(searchQuery.trim())}&language=th-TH&page=${page}`)}`);
             const data = await res.json();
             
             movies = data.results || [];
-            // อัปเดตจำนวนหน้าทั้งหมดจากการค้นหา
             totalPages = data.total_pages > 500 ? 500 : (data.total_pages || 1);
         } catch (e) {
             console.error('Error searching movies:', e);
@@ -198,10 +197,11 @@ function changePage(newPage: number) {
         <!-- ปุ่มกดแว่นขยาย -->
         <!-- svelte-ignore a11y_consider_explicit_label -->
         <button
-            onclick={searchMovies}
+			type="button"
+            onclick={() => searchMovies()}
             class="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-red-500/20 text-red-400 transition-all hover:bg-red-500 hover:text-white cursor-pointer"
         >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6 pointer-events-none">
   <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
 </svg>
 
