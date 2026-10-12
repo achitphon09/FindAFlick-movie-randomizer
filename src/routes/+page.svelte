@@ -166,7 +166,6 @@ function changePage(newPage: number) {
 
 <svelte:head>
 	<title>FindAFlick</title>
-	<link rel="icon" type="image/png" href="/Realarchit.png" />
 </svelte:head>
 
 <main class="min-h-screen bg-black p-8 text-white">
