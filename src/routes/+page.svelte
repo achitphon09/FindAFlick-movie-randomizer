@@ -198,9 +198,9 @@
 
 		try {
 			// 🍿 ใส่ include_video_language=th,en,null เพื่อดึงวิดีโอทั้งภาษาไทย ภาษาอังกฤษ และคลิปทั่วไป
-			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos&include_video_language=th,en,null`;
-			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-			const data = await res.json();
+			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
+            const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+            const data = await res.json();
 
 			selectedMovieDetails = data;
 
