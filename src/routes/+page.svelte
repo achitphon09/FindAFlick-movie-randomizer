@@ -32,6 +32,9 @@
 	let trailerKey = $state<string | null>(null);
 	let isPlayingTrailer = $state<boolean>(false);
 
+	let randomTrailerKey = $state<string | null>(null);
+	let isPlayingRandomMovieTrailer = $state<boolean>(false);
+
 	// 1. ดึงหนังตามหมวดหมู่
 	// เมื่อผู้ใช้เลือกหมวดหมู่
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -118,6 +121,9 @@
 			isModalOpen = true;
 		} catch (error) {
 			console.error('Error picking random movie:', error);
+		}
+		if (randomMovie?.id) {
+			fetchRandomMovieTrailer(randomMovie.id);
 		}
 	}
 
@@ -231,6 +237,40 @@
 		isPlayingTrailer = false;
 		trailerKey = null;
 	}
+
+	async function fetchRandomMovieTrailer(movieId: number) {
+		randomTrailerKey = null;
+		isPlayingRandomMovieTrailer = false;
+
+		try {
+			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos&include_video_language=th,en,null`;
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
+
+			const videos = data.videos?.results || [];
+
+			// ค้นหาคลิป YouTube
+			let trailer =
+				videos.find(
+					(v: any) => v.site === 'YouTube' && v.type === 'Trailer' && v.iso_639_1 === 'th'
+				) ||
+				videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') ||
+				videos.find((v: any) => v.site === 'YouTube');
+
+			if (trailer && trailer.key) {
+				randomTrailerKey = trailer.key;
+			}
+		} catch (e) {
+			console.error('Error fetching random movie trailer:', e);
+		}
+	}
+
+	// 🛡️ ฟังก์ชันปิด Modal สุ่มหนัง (ล้างค่าทุกอย่างกันเสียงค้าง 100%)
+	function closeRandomModal() {
+		isModalOpen = false;
+		isPlayingRandomMovieTrailer = false;
+		randomTrailerKey = null;
+	}
 </script>
 
 <svelte:head>
@@ -242,7 +282,9 @@
 		<!-- ส่วนหัวเว็บ -->
 		<div class="mb-8 text-center">
 			<h1 class="mt-6 mb-2 text-5xl font-bold text-red-500">FindAFlick</h1>
-			<p class="mb-6 text-lg text-gray-300">อยากดูหนังแต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้</p>
+			<p class="mb-6 text-xs whitespace-nowrap text-gray-300 sm:text-base md:text-lg">
+				อยากดูหนังแต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้
+			</p>
 
 			<!-- 🎲 ปุ่มสุ่มหนังไฮไลท์ -->
 			<button
@@ -513,64 +555,125 @@
 {#if isModalOpen && randomMovie}
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md transition-all duration-300"
+		onclick={(e) => {
+			if (e.target === e.currentTarget) closeRandomModal();
+		}}
 	>
 		<!-- ตัวกล่อง Modal แบบ Glassmorphism -->
 		<div
-			class="animate-in fade-in zoom-in w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 {isShaking
+			class="animate-in fade-in zoom-in relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 {isShaking
 				? 'animate-shake'
 				: ''}"
 		>
-			<div class="flex flex-col gap-6 p-6 md:flex-row md:p-8">
-				<!-- โปสเตอร์ใน Modal -->
-				<div
-					class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48"
+			<!-- ❌ ปุ่มปิด X มุมขวาบน (มือถือ) -->
+			<button
+				type="button"
+				onclick={closeRandomModal}
+				class="absolute top-3 right-3 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-black/70 active:scale-95 md:hidden"
+				aria-label="Close modal"
+			>
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					fill="none"
+					viewBox="0 0 24 24"
+					stroke-width="2.5"
+					stroke="currentColor"
+					class="size-5"
 				>
-					{#if randomMovie.poster_path}
-						<img
-							src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
-							alt={randomMovie.title}
-							class="h-full w-full object-cover"
-						/>
-					{:else}
-						<div class="flex h-full items-center justify-center text-xs text-gray-500">
-							ไม่มีรูปภาพ
-						</div>
-					{/if}
-				</div>
+					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+				</svg>
+			</button>
 
-				<!-- รายละเอียดหนัง -->
-				<div class="flex flex-grow flex-col justify-between text-left">
-					<div>
-						<div class="mb-3 flex items-start justify-between">
-							<span
-								class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-md"
-								>⭐ IMDB {randomMovie.vote_average
-									? randomMovie.vote_average.toFixed(1)
-									: 'N/A'}</span
-							>
-						</div>
-						<h3 class="mb-2 text-2xl font-bold text-white drop-shadow-md">{randomMovie.title}</h3>
-						<p class="mb-4 max-h-40 overflow-y-auto text-sm leading-relaxed text-gray-300">
-							{randomMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
-						</p>
+			<div class="flex flex-col p-6 md:p-8">
+				<!-- 🎬 เล่นตัวอย่างหนัง YouTube (พร้อมมาสก์ตัดขอบโค้งเนียนสนิท ไม่แลบเป็นสี่เหลี่ยม) -->
+				{#if isPlayingRandomMovieTrailer && randomTrailerKey}
+					<div
+						class="relative isolate mb-6 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
+						style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);"
+					>
+						<iframe
+							src={`https://www.youtube.com/embed/${randomTrailerKey}?autoplay=1`}
+							title="Random Movie Trailer"
+							class="h-full w-full rounded-2xl border-0"
+							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+							allowfullscreen
+						></iframe>
+						<button
+							type="button"
+							onclick={() => (isPlayingRandomMovieTrailer = false)}
+							class="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm hover:bg-black"
+						>
+							✕ ปิดตัวอย่างหนัง
+						</button>
+					</div>
+				{/if}
+
+				<div class="flex flex-col gap-6 md:flex-row">
+					<!-- โปสเตอร์ใน Modal -->
+					<div
+						class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48"
+					>
+						{#if randomMovie.poster_path}
+							<img
+								src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
+								alt={randomMovie.title}
+								class="h-full w-full object-cover"
+							/>
+						{:else}
+							<div class="flex h-full items-center justify-center text-xs text-gray-500">
+								ไม่มีรูปภาพ
+							</div>
+						{/if}
 					</div>
 
-					<!-- กลุ่มปุ่มกดแบบ Glassmorphism -->
-					<div class="mt-4 flex gap-3">
-						<!-- ปุ่มสุ่มใหม่ -->
-						<button
-							onclick={pickRandomMovie}
-							class="flex-1 cursor-pointer rounded-xl border border-red-500/50 bg-red-500/20 py-3 text-sm font-bold text-red-100 shadow-lg backdrop-blur-md transition-all hover:bg-red-500/40 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)]"
-						>
-							🎲 ไม่ถูกใจหรอ? สุ่มอีกรอบสิ
-						</button>
-						<!-- ปุ่มปิด -->
-						<button
-							onclick={() => (isModalOpen = false)}
-							class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white/10 hover:text-white"
-						>
-							ปิด
-						</button>
+					<!-- รายละเอียดหนัง -->
+					<div class="flex flex-grow flex-col justify-between text-left">
+						<div>
+							<div class="mb-3 flex items-start justify-between">
+								<span
+									class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-md"
+									>⭐ IMDB {randomMovie.vote_average
+										? randomMovie.vote_average.toFixed(1)
+										: 'N/A'}</span
+								>
+							</div>
+							<h3 class="mb-2 text-2xl font-bold text-white drop-shadow-md">{randomMovie.title}</h3>
+							<p class="mb-4 max-h-36 overflow-y-auto text-sm leading-relaxed text-gray-300">
+								{randomMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
+							</p>
+						</div>
+
+						<!-- ปุ่มกดดูตัวอย่างหนัง (กรณีไม่ได้เปิดวิดีโออยู่) -->
+						{#if randomTrailerKey && !isPlayingRandomMovieTrailer}
+							<button
+								type="button"
+								onclick={() => (isPlayingRandomMovieTrailer = true)}
+								class="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-600 active:scale-95"
+							>
+								<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
+							</button>
+						{/if}
+
+						<!-- กลุ่มปุ่มกดแบบ Glassmorphism -->
+						<div class="mt-2 flex gap-3">
+							<!-- ปุ่มสุ่มใหม่ -->
+							<button
+								onclick={() => {
+									isPlayingRandomMovieTrailer = false;
+									pickRandomMovie();
+								}}
+								class="flex-1 cursor-pointer rounded-xl border border-red-500/50 bg-red-500/20 py-3 text-sm font-bold text-red-100 shadow-lg backdrop-blur-md transition-all hover:bg-red-500/40 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95"
+							>
+								🎲 ไม่ถูกใจหรอ? สุ่มอีกรอบสิ
+							</button>
+							<!-- ปุ่มปิด -->
+							<button
+								onclick={closeRandomModal}
+								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
+							>
+								ปิด
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
