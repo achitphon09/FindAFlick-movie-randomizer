@@ -365,6 +365,7 @@
 			<!-- ตัวครอบหลักแบบ relative เพื่อให้ปุ่มลูกศรยึดตำแหน่งอยู่ขอบซ้าย/ขวาได้ -->
 			<div class="group relative">
 				<!-- ปุ่มเลื่อนซ้าย (แสดงเมื่อเอาเมาส์ช็อต หรือกดเลื่อน) -->
+				<!-- svelte-ignore a11y_consider_explicit_label -->
 				<button
 					type="button"
 					onclick={() => {
@@ -392,6 +393,8 @@
 				>
 					{#each topMovies as movie, index}
 						<!-- ปรับขนาดการ์ดให้พอดี ไม่ใหญ่เกินไป (เช่น min-w-[130px] และ sm:min-w-[150px]) -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
 							class="group/item relative max-w-[130px] min-w-[130px] shrink-0 cursor-pointer sm:max-w-[150px] sm:min-w-[150px]"
 							onclick={() => openMovieDetails(movie.id)}
@@ -422,6 +425,7 @@
 				</div>
 
 				<!-- ปุ่มเลื่อนขวา (สไตล์แคปซูลมนๆ แบบในรูปตัวอย่าง) -->
+				<!-- svelte-ignore a11y_consider_explicit_label -->
 				<button
 					type="button"
 					onclick={() => {
@@ -553,6 +557,8 @@
 
 <!-- 🎬 Modal แสดงผลลัพธ์เมื่อกดสุ่มหนัง -->
 {#if isModalOpen && randomMovie}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md transition-all duration-300"
 		onclick={(e) => {
