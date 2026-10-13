@@ -493,8 +493,20 @@ $effect(() => {
 
 {#if isDetailModalOpen}
     <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md transition-all duration-300">
-        <div class="animate-in fade-in zoom-in w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
+        <!-- เพิ่ม relative ที่กล่องหลักเพื่อให้ปุ่ม X อ้างอิงตำแหน่งมุมขวาบนได้ถูกต้อง -->
+        <div class="relative animate-in fade-in zoom-in w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl">
             
+<button
+    type="button"
+    onclick={() => (isDetailModalOpen = false)}
+    class="absolute right-3 top-3 z-50 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-black/70 active:scale-95 cursor-pointer md:hidden"
+    aria-label="Close modal"
+>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+    </svg>
+</button>
+
             {#if isDetailLoading}
                 <!-- หน้าต่างโหลดข้อมูล -->
                 <div class="flex h-64 flex-col items-center justify-center text-gray-400">
@@ -572,8 +584,9 @@ $effect(() => {
                             </div>
                         </div>
 
-                        <!-- ปุ่มปิด -->
+                        <!-- ปุ่มปิด (ด้านล่างเก็บไว้เหมือนเดิมเผื่อเลือกกด) -->
                         <button
+                            type="button"
                             onclick={() => (isDetailModalOpen = false)}
                             class="w-full rounded-xl border border-white/10 bg-white/10 py-3 text-sm font-bold text-white transition-all hover:bg-white/20 active:scale-95 cursor-pointer"
                         >
