@@ -4,10 +4,8 @@
     let { data }: PageProps = $props();
     let genres = $derived(data.genres || []);
 
-    let selectedGenreId = $state<number | null>(null);
     let movies = $state<any[]>([]);
     let isLoading = $state(false);
-
     let randomMovie = $state<any | null>(null);
     let isModalOpen = $state(false);
 
@@ -26,27 +24,35 @@
 	let currentPage = $state(1);
 	let totalPages = $state(500); // TMDB ลิมิตไว้สูงสุด 500 หน้า
 
+    let topMovies = $state<any[]>([]);
+
+    let currentSort = $state<string | null>(null); // เก็บสถานะปุ่ม Sort ปัจจุบัน
+    let selectedGenreId = $state<number | null>(null);
+
     // 1. ดึงหนังตามหมวดหมู่
- async function fetchMoviesByGenre(genreId: number, page: number = 1) {
-        isLoading = true;
-        currentPage = page;
-        isSearching = false; // ปิดสถานะค้นหาเพื่อให้รู้ว่ากำลังดูตามหมวดอยู่
+ // เมื่อผู้ใช้เลือกหมวดหมู่
+async function fetchMoviesByGenre(genreId: number, page: number = 1) {
+    isLoading = true;
+    isSearching = false;
+    searchQuery = '';
+    selectedGenreId = genreId;
+    currentSort = null; // ล้างสถานะ Sort ทิ้งทันที!
+    currentPage = page;
+    
+    try {
+        const endpoint = `/discover/movie?with_genres=${genreId}&language=th-TH&page=${page}`;
+        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+        const data = await res.json();
         
-        try {
-            const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(`/discover/movie?with_genres=${genreId}&language=th-TH&page=${page}`)}`);
-            const data = await res.json();
-            
-            movies = data.results || [];
-            
-            // ⭐ จุดสำคัญ: อัปเดตจำนวนหน้าทั้งหมดของหมวดหมู่นี้ (จำกัดไว้ไม่เกิน 500 หน้าตาม TMDB)
-            totalPages = data.total_pages > 500 ? 500 : (data.total_pages || 1);
-        } catch (e) {
-            console.error('Error fetching movies by genre:', e);
-            movies = [];
-        } finally {
-            isLoading = false;
-        }
+        movies = data.results || [];
+        totalPages = data.total_pages > 500 ? 500 : (data.total_pages || 1);
+    } catch (e) {
+        console.error('Error fetching movies by genre:', e);
+        movies = [];
+    } finally {
+        isLoading = false;
     }
+}
 
     // 2. ค้นหาหนัง
     async function searchMovies(page: number = 1) {
@@ -161,6 +167,25 @@ function changePage(newPage: number) {
             : genres.find((g: { id: number }) => g.id === selectedGenreId)?.name || ''
     );
 
+    async function fetchTopMovies() {
+    try {
+        // ดึงหนังเรตติ้งสูงสุดจาก TMDB
+        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(`/movie/top_rated?language=th-TH&page=1`)}`);
+        const data = await res.json();
+        
+        // ตัดมาแค่ 10 อันดับแรก
+        topMovies = (data.results || []).slice(0, 10);
+    } catch (e) {
+        console.error('Error fetching top movies:', e);
+        topMovies = [];
+    }
+}
+
+// เรียกใช้งานตอนโหลดหน้าเว็บ
+$effect(() => {
+    fetchTopMovies();
+});
+
 </script>
 
 <svelte:head>
@@ -214,17 +239,20 @@ function changePage(newPage: number) {
     <div class="mb-8 flex overflow-x-auto px-4 pb-4 md:mb-12 md:flex-wrap md:justify-center md:overflow-visible md:pb-0 gap-2 sm:gap-3.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {#each genres as genre}
             <button
+                type="button"
                 onclick={() => {
                     selectedGenreId = genre.id;
+                    currentSort = null; // เคลียร์สถานะปุ่ม Sort
                     isSearching = false; 
                     searchQuery = ''; 
                     
                     fetchMoviesByGenre(genre.id); 
                 }}
-                class="flex-shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm sm:px-6 sm:py-2.5 sm:text-base font-semibold tracking-wide backdrop-blur-md transition-all duration-300 active:scale-95 cursor-pointer
-                {selectedGenreId === genre.id && !isSearching
-                    ? 'scale-105 border-red-500/50 bg-red-500/35 text-white shadow-[0_0_15px_rgba(239,68,68,0.35)] drop-shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
-                    : 'border-white/10 bg-white/5 text-gray-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)]'}"
+                class={`flex-shrink-0 whitespace-nowrap rounded-full border px-4 py-1.5 text-sm sm:px-6 sm:py-2.5 sm:text-base font-semibold tracking-wide backdrop-blur-md transition-all duration-300 active:scale-95 cursor-pointer ${
+                    selectedGenreId === genre.id && !isSearching && !currentSort
+                        ? 'scale-105 border-red-500/50 bg-red-500/35 text-white shadow-[0_0_15px_rgba(239,68,68,0.35)] drop-shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
+                        : 'border-white/10 bg-white/5 text-gray-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)]'
+                }`}
             >
                 {genre.name}
             </button>
@@ -232,10 +260,79 @@ function changePage(newPage: number) {
     </div>
 {/if}
 
+
+<div class="my-10 w-full px-4">
+    <h2 class="mb-4 text-2xl font-bold text-white">Top 10 เขาดูอะไรกันอยู่ตอนนี้</h2>
+    
+    <!-- ตัวครอบหลักแบบ relative เพื่อให้ปุ่มลูกศรยึดตำแหน่งอยู่ขอบซ้าย/ขวาได้ -->
+    <div class="relative group">
+        
+        <!-- ปุ่มเลื่อนซ้าย (แสดงเมื่อเอาเมาส์ช็อต หรือกดเลื่อน) -->
+        <button 
+            type="button"
+            onclick={() => {
+                const container = document.getElementById('top-movies-container');
+                if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
+            }}
+            class="absolute left-0 top-1/2 -translate-y-1/2 z-20 hidden md:flex h-24 w-10 items-center justify-center rounded-r-lg bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/80 cursor-pointer"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            </svg>
+        </button>
+
+        <!-- แถวเลื่อนดูหนัง (กำหนด id ไว้สำหรับสั่งเลื่อน) -->
+        <div 
+            id="top-movies-container"
+            class="flex gap-4 overflow-x-auto pl-6 pb-4 pt-4 scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] scroll-smooth"
+        >
+            {#each topMovies as movie, index}
+                <!-- ปรับขนาดการ์ดให้พอดี ไม่ใหญ่เกินไป (เช่น min-w-[130px] และ sm:min-w-[150px]) -->
+                <div 
+                    class="group/item relative min-w-[130px] max-w-[130px] sm:min-w-[150px] sm:max-w-[150px] cursor-pointer shrink-0"
+                    onclick={() => openMovieDetails(movie.id)}
+                >
+                    <!-- ตัวเลขอันดับ ปรับขนาดลงมาให้บาลานซ์กับขนาดการ์ดใหม่ -->
+                    <span class="absolute -bottom-3 -left-4 z-10 text-7xl font-black italic bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] sm:text-8xl transition-transform group-hover/item:scale-105 pointer-events-none">
+                    {index + 1}
+                    </span>
+
+                    <!-- โปสเตอร์หนัง -->
+                    <div class="relative overflow-hidden rounded-lg bg-white/5 shadow-lg aspect-[2/3]">
+                        {#if movie.poster_path}
+                            <img 
+                                src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`} 
+                                alt={movie.title}
+                                class="h-full w-full object-cover transition-transform duration-300 group-hover/item:scale-110"
+                            />
+                        {:else}
+                            <div class="flex h-full items-center justify-center text-gray-500 text-xs">ไม่มีรูปภาพ</div>
+                        {/if}
+                    </div>
+                </div>
+            {/each}
+        </div>
+
+        <!-- ปุ่มเลื่อนขวา (สไตล์แคปซูลมนๆ แบบในรูปตัวอย่าง) -->
+        <button 
+            type="button"
+            onclick={() => {
+                const container = document.getElementById('top-movies-container');
+                if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
+            }}
+            class="absolute right-0 top-1/2 -translate-y-1/2 z-20 flex h-24 w-10 items-center justify-center rounded-l-lg bg-black/60 text-white md:opacity-0 md:group-hover:opacity-100 transition-opacity hover:bg-black/80 cursor-pointer"
+        >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+        </button>
+
+    </div>
+</div>
 		<!-- แสดงรายชื่อหนัง -->
 		<div>
     <div class="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-white/10 pb-4">
-        <h2 class="bg-gradient-to-r from-red-500 to-amber-500 bg-clip-text text-2xl font-bold text-transparent drop-shadow-sm">
+        <h2 class="bg-white bg-clip-text text-2xl font-bold text-transparent drop-shadow-sm">
             หมวดหมู่: {currentGenreName}
         </h2>
         <span class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-300 backdrop-blur-md shadow-sm">
@@ -251,6 +348,7 @@ function changePage(newPage: number) {
         <div class="animate-pulse rounded-2xl border border-white/5 bg-white/5 py-20 text-center text-lg text-gray-400 backdrop-blur-sm">
             รอสักครู่นะครับพี่... 🎬
         </div>
+
     {:else if movies.length > 0}
         <div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {#each movies as movie}
