@@ -35,6 +35,11 @@
 	let randomTrailerKey = $state<string | null>(null);
 	let isPlayingRandomMovieTrailer = $state<boolean>(false);
 
+	let viewMode = $state<'home' | 'genre' | 'sort' | 'search' | 'provider'>('home');
+	let selectedProviderId = $state<number | null>(null);
+
+	let randomMovieProviders = $state<any[]>([]);
+
 	// 1. ดึงหนังตามหมวดหมู่
 	// เมื่อผู้ใช้เลือกหมวดหมู่
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -199,8 +204,8 @@
 		try {
 			// 🍿 ใส่ include_video_language=th,en,null เพื่อดึงวิดีโอทั้งภาษาไทย ภาษาอังกฤษ และคลิปทั่วไป
 			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
-            const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-            const data = await res.json();
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
 
 			selectedMovieDetails = data;
 
@@ -241,15 +246,16 @@
 	async function fetchRandomMovieTrailer(movieId: number) {
 		randomTrailerKey = null;
 		isPlayingRandomMovieTrailer = false;
+		randomMovieProviders = []; // เคลียร์สตรีมมิ่งเก่าก่อนสุ่มใหม่
 
 		try {
-			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos&include_video_language=th,en,null`;
+			// 🍿 พ่วง watch/providers เข้าไปใน append_to_response ด้วย
+			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
 
+			// จัดการคลิปวิดีโอ (เหมือนเดิม)
 			const videos = data.videos?.results || [];
-
-			// ค้นหาคลิป YouTube
 			let trailer =
 				videos.find(
 					(v: any) => v.site === 'YouTube' && v.type === 'Trailer' && v.iso_639_1 === 'th'
@@ -260,16 +266,77 @@
 			if (trailer && trailer.key) {
 				randomTrailerKey = trailer.key;
 			}
+
+			// 🌟 ดึงข้อมูลสตรีมมิ่งเฉพาะในไทย (TH) แบบเหมาจ่ายรายเดือน (flatrate)
+			if (data['watch/providers']?.results?.TH?.flatrate) {
+				randomMovieProviders = data['watch/providers'].results.TH.flatrate;
+			}
 		} catch (e) {
-			console.error('Error fetching random movie trailer:', e);
+			console.error('Error fetching random movie details:', e);
 		}
 	}
 
-	// 🛡️ ฟังก์ชันปิด Modal สุ่มหนัง (ล้างค่าทุกอย่างกันเสียงค้าง 100%)
 	function closeRandomModal() {
 		isModalOpen = false;
 		isPlayingRandomMovieTrailer = false;
 		randomTrailerKey = null;
+		randomMovieProviders = []; // 👈 เพิ่มบรรทัดนี้
+	}
+
+	// 📺 ฟังก์ชันกรองตามสตรีมมิ่ง (เซฟตี้ ไม่ตีกับหมวดหมู่)
+	async function filterByPlatform(providerId: number | null) {
+		// 1. 🛡️ เคลียร์สถานะหมวดหมู่เดิมและคำค้นหาทันที ป้องกันข้อมูลซ้ำซ้อน
+		selectedGenreId = null;
+		searchQuery = '';
+
+		// ถ้ากดปุ่ม "ทั้งหมด" ให้กลับไปหน้าแรก
+		if (providerId === null) {
+			selectedProviderId = null;
+			viewMode = 'home';
+			movies = [];
+			return;
+		}
+
+		selectedProviderId = providerId;
+		viewMode = 'provider'; // 👈 ตั้งโหมดเป็น provider ชัดเจน
+		isLoading = true;
+
+		try {
+			const endpoint = `/discover/movie?language=th-TH&watch_region=TH&with_watch_providers=${providerId}&with_watch_monetization_types=flatrate&sort_by=popularity.desc&page=1`;
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
+
+			movies = data.results || [];
+		} catch (e) {
+			console.error('Error fetching platform movies:', e);
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	// 📌 ⚠️ สำคัญมาก: ในฟังก์ชันกดเลือกหมวดหมู่เดิม (เช่น filterByGenre) ให้ใส่บรรทัดนี้ไว้ด้วย
+	async function filterByGenre(genreId: number) {
+		// 1. 🛡️ เคลียร์สถานะอื่นๆ ออกทันที ไม่ให้ข้อมูลตีกัน
+		selectedProviderId = null; // ล้างค่าสตรีมมิ่งออก เวลาสลับมาเลือกหมวดหมู่ปกติ
+		searchQuery = ''; // ล้างคำค้นหาเดิมออก
+		selectedGenreId = genreId;
+		viewMode = 'genre';
+		isLoading = true;
+
+		try {
+			// 2. ยิง API ผ่าน TMDB Endpoint สำหรับกรองตามหมวดหมู่ (เรียงตามความนิยม)
+			const endpoint = `/discover/movie?language=th-TH&with_genres=${genreId}&sort_by=popularity.desc&page=1`;
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
+
+			// 3. นำผลลัพธ์ใส่ตัวแปร movies เพื่อแสดงการ์ดหนังบนหน้าจอ
+			movies = data.results || [];
+		} catch (e) {
+			console.error('Error fetching movies by genre:', e);
+			movies = [];
+		} finally {
+			isLoading = false;
+		}
 	}
 </script>
 
@@ -520,30 +587,62 @@
 						</div>
 					{/each}
 				</div>
-				<div class="my-10 flex items-center justify-center gap-4">
-					<!-- ปุ่มหน้าก่อนหน้า -->
-					<button
-						onclick={() => changePage(currentPage - 1)}
-						disabled={currentPage === 1 || isLoading}
-						class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
-					>
-						← ก่อนหน้า
-					</button>
+				<div class="my-8 flex flex-wrap items-center justify-center gap-3 px-4 md:my-10 md:gap-4">
+    <!-- ปุ่มหน้าก่อนหน้า -->
+    <button
+        onclick={() => changePage(currentPage - 1)}
+        disabled={currentPage === 1 || isLoading}
+        class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+    >
+        ← ก่อนหน้า
+    </button>
 
-					<!-- แสดงเลขหน้า -->
-					<span class="text-sm font-medium text-gray-300">
-						หน้า <span class="font-bold text-white">{currentPage}</span> / {totalPages}
-					</span>
+    <!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้ามแบบรวดเร็ว -->
+    <form
+        onsubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.currentTarget);
+            const pageNumber = parseInt(formData.get('pageInput') as string);
+            
+            // เช็กว่ากรอกเลขถูกต้อง (ไม่น้อยกว่า 1, ไม่เกินหน้าที่มีทั้งหมด และไม่ใช่หน้าปัจจุบัน)
+            if (pageNumber >= 1 && pageNumber <= totalPages && pageNumber !== currentPage) {
+                changePage(pageNumber);
+            } else {
+                // ถ้ากรอกเลขผิด หรือเป็นหน้าปัจจุบัน ให้รีเซ็ตกลับเป็นเลขหน้าเดิม
+                (e.currentTarget.elements.namedItem('pageInput') as HTMLInputElement).value = currentPage.toString();
+            }
+        }}
+        class="order-last mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mt-0 md:w-auto md:py-1.5"
+    >
+        <span class="text-sm font-medium text-gray-300">หน้า</span>
+        <input
+            name="pageInput"
+            type="number"
+            min="1"
+            max={totalPages}
+            value={currentPage}
+            title="พิมพ์เลขหน้าแล้วกด Enter"
+            class="w-16 rounded-md border border-white/20 bg-black/40 py-1 text-center text-sm font-bold text-white outline-none transition-all focus:border-red-500 focus:bg-black focus:ring-1 focus:ring-red-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <span class="text-sm font-medium text-gray-300">/ {totalPages}</span>
+        
+        <button
+            type="submit"
+            class="ml-1 cursor-pointer rounded-lg bg-red-600/80 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-red-500 active:scale-95"
+        >
+            สาดไปสมาชิก
+        </button>
+    </form>
 
-					<!-- ปุ่มหน้าถัดไป -->
-					<button
-						onclick={() => changePage(currentPage + 1)}
-						disabled={currentPage >= totalPages || isLoading}
-						class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-5 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
-					>
-						ถัดไป →
-					</button>
-				</div>
+    <!-- ปุ่มหน้าถัดไป -->
+    <button
+        onclick={() => changePage(currentPage + 1)}
+        disabled={currentPage >= totalPages || isLoading}
+        class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+    >
+        ถัดไป →
+    </button>
+</div>
 			{:else}
 				<div
 					class="rounded-2xl border border-white/5 bg-white/5 py-16 text-center text-gray-400 backdrop-blur-sm"
@@ -638,16 +737,38 @@
 							<div class="mb-3 flex items-start justify-between">
 								<span
 									class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-md"
-									>⭐ IMDB {randomMovie.vote_average
-										? randomMovie.vote_average.toFixed(1)
-										: 'N/A'}</span
 								>
+									⭐ IMDB {randomMovie.vote_average ? randomMovie.vote_average.toFixed(1) : 'N/A'}
+								</span>
 							</div>
 							<h3 class="mb-2 text-2xl font-bold text-white drop-shadow-md">{randomMovie.title}</h3>
 							<p class="mb-4 max-h-36 overflow-y-auto text-sm leading-relaxed text-gray-300">
 								{randomMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
 							</p>
 						</div>
+
+						<!-- ส่วนแสดงแพลตฟอร์มสตรีมมิ่งที่เพิ่มเข้ามาใหม่ -->
+						{#if randomMovieProviders.length > 0}
+							<div class="mb-4 rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
+								<h4 class="mb-2 text-xs font-semibold text-gray-400">
+									อ๋อเรื่องนี้อยู่ในแพลตฟอร์ม
+								</h4>
+								<div class="flex flex-wrap gap-2">
+									{#each randomMovieProviders as provider}
+										<div
+											class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-2 py-1 pr-3 shadow-sm transition-colors hover:bg-white/20"
+										>
+											<img
+												src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
+												alt={provider.provider_name}
+												class="h-6 w-6 rounded-md object-cover shadow-sm"
+											/>
+											<span class="text-xs font-bold text-white">{provider.provider_name}</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 
 						<!-- ปุ่มกดดูตัวอย่างหนัง (กรณีไม่ได้เปิดวิดีโออยู่) -->
 						{#if randomTrailerKey && !isPlayingRandomMovieTrailer}
@@ -660,9 +781,8 @@
 							</button>
 						{/if}
 
-						<!-- กลุ่มปุ่มกดแบบ Glassmorphism -->
+						<!-- กลุ่มปุ่มกดแบบ Glassmorphism (สุ่มใหม่ / ปิด) -->
 						<div class="mt-2 flex gap-3">
-							<!-- ปุ่มสุ่มใหม่ -->
 							<button
 								onclick={() => {
 									isPlayingRandomMovieTrailer = false;
@@ -672,7 +792,6 @@
 							>
 								🎲 ไม่ถูกใจหรอ? สุ่มอีกรอบสิ
 							</button>
-							<!-- ปุ่มปิด -->
 							<button
 								onclick={closeRandomModal}
 								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
