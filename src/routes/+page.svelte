@@ -345,33 +345,33 @@
 
 	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
 async function loadDailyMovie() {
-    // 1. ดึงวันที่ปัจจุบัน (เช่น "14/10/2026")
     const today = new Date().toLocaleDateString('th-TH');
-    
-    // 2. เช็กข้อมูลใน Local Storage ว่ามีของวันนี้เซฟไว้ไหม
     const storedDate = localStorage.getItem('dailyMovieDate');
     const storedMovie = localStorage.getItem('dailyMovieData');
 
     if (storedDate === today && storedMovie) {
-        // ✅ ถ้าเป็นของวันนี้ ให้ใช้ข้อมูลเดิมเลย (หนังจะไม่เปลี่ยนจนกว่าจะข้ามวัน)
         dailyMovie = JSON.parse(storedMovie);
         return;
     }
 
-    // 🎲 ถ้าเพิ่งเปิดครั้งแรกของวัน หรือข้ามวันแล้ว ให้สุ่มใหม่
     try {
-        // TMDB มีหน้าสูงสุดที่ให้ค้นหาได้ประมาณ 500 หน้า เราจะสุ่มหน้า 1 ถึง 500
-        const randomPage = Math.floor(Math.random() * 500) + 1;
-        const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${randomPage}`;
+        // 1. ดึง วัน-เดือน-ปี มาทำเป็นตัวเลข Seed (เช่น 20261014)
+        const now = new Date();
+        const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+
+        // 2. คำนวณเลขหน้า (1 - 400) และ ลำดับหนัง (0 - 19) จากตัวเลข Seed วันที่
+        const page = (seed % 400) + 1; 
+        const movieIndex = (seed * 7) % 20;
+
+        // 3. ยิงไปดึงข้อมูล
+        const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${page}`;
         const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
-            // สุ่มเลือก 1 เรื่องจาก 20 เรื่องในหน้านั้น
-            const randomIndex = Math.floor(Math.random() * data.results.length);
-            dailyMovie = data.results[randomIndex];
+            // ดึงเรื่องตาม index ที่คำนวณได้จากวันที่
+            dailyMovie = data.results[movieIndex] || data.results[0];
 
-            // 💾 บันทึกวันที่และข้อมูลหนังลง Local Storage เพื่อให้จำไว้ใช้ทั้งวัน
             localStorage.setItem('dailyMovieDate', today);
             localStorage.setItem('dailyMovieData', JSON.stringify(dailyMovie));
         }
@@ -476,7 +476,7 @@ onMount(() => {
 {#if viewMode === 'home' && dailyMovie}
     <div class="my-8 w-full px-4">
         <h2 class="mb-4 text-2xl font-bold text-white flex items-center gap-2">
-         หนังที่แซมมี่อยากให้คุณดูประจำวันนี้
+         วันนี้ดูอะไรดี?
         </h2>
         
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -511,7 +511,7 @@ onMount(() => {
                 <div class="flex flex-col justify-center">
                     <div class="mb-3">
                         <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md">
-                            หนังดี หนังเด็ด ประจำวัน 🍿
+                            Pick Of The Day 🍿
                         </span>
                     </div>
                     <h3 class="mb-2 text-3xl font-bold text-white drop-shadow-md md:text-4xl">{dailyMovie.title}</h3>
