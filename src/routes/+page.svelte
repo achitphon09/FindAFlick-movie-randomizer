@@ -345,35 +345,39 @@
 
 	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
 async function loadDailyMovie() {
-    const today = new Date().toLocaleDateString('th-TH');
-    const storedDate = localStorage.getItem('dailyMovieDate');
-    const storedMovie = localStorage.getItem('dailyMovieData');
+    const now = new Date();
+    
+    // 1. สร้างวันที่มาตรฐาน (YYYY-MM-DD) ที่เหมือนกันทุกอุปกรณ์บนโลก
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`; // ผลลัพธ์จะได้ เช่น "2026-10-14" เสมอ
 
-    if (storedDate === today && storedMovie) {
+    // 2. ใช้คีย์ v2 เพื่อล้างแคชเก่าที่เคยเซฟค้างไว้ในเครื่อง
+    const storedDate = localStorage.getItem('dailyMovieDate_v2');
+    const storedMovie = localStorage.getItem('dailyMovieData_v2');
+
+    if (storedDate === todayStr && storedMovie) {
         dailyMovie = JSON.parse(storedMovie);
         return;
     }
 
     try {
-        // 1. ดึง วัน-เดือน-ปี มาทำเป็นตัวเลข Seed (เช่น 20261014)
-        const now = new Date();
-        const seed = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-
-        // 2. คำนวณเลขหน้า (1 - 400) และ ลำดับหนัง (0 - 19) จากตัวเลข Seed วันที่
+        // 3. คำนวณเลข Seed จากวัน-เดือน-ปี (ตรงกันเป๊ะทุกเครื่องแน่นอน)
+        const seed = year * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
         const page = (seed % 400) + 1; 
         const movieIndex = (seed * 7) % 20;
 
-        // 3. ยิงไปดึงข้อมูล
         const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${page}`;
         const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
         const data = await res.json();
 
         if (data.results && data.results.length > 0) {
-            // ดึงเรื่องตาม index ที่คำนวณได้จากวันที่
             dailyMovie = data.results[movieIndex] || data.results[0];
 
-            localStorage.setItem('dailyMovieDate', today);
-            localStorage.setItem('dailyMovieData', JSON.stringify(dailyMovie));
+            // บันทึกลงแคชเวอร์ชัน v2
+            localStorage.setItem('dailyMovieDate_v2', todayStr);
+            localStorage.setItem('dailyMovieData_v2', JSON.stringify(dailyMovie));
         }
     } catch (error) {
         console.error('Error fetching daily movie:', error);
