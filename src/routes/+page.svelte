@@ -44,6 +44,9 @@
 	// 🌟 ตัวแปรเก็บหนังแนะนำประจำวัน
 	let dailyMovie = $state<any>(null);
 
+	// 📌 ตัวแปรอ้างอิง Element แถบนักแสดง สำหรับให้ปุ่มลูกศรกดสั่งเลื่อน
+	let castContainer = $state<HTMLElement | null>(null);
+
 	// 1. ดึงหนังตามหมวดหมู่
 	// เมื่อผู้ใช้เลือกหมวดหมู่
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -206,29 +209,21 @@
 		isPlayingTrailer = false;
 
 		try {
-			// 🍿 ใส่ include_video_language=th,en,null เพื่อดึงวิดีโอทั้งภาษาไทย ภาษาอังกฤษ และคลิปทั่วไป
-			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
+			// 🍿 พ่วง credits เพิ่มเข้าไปใน append_to_response (คั่นด้วยเครื่องหมายจุลภาค ,)
+			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers,credits&include_video_language=th,en,null`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
 
 			selectedMovieDetails = data;
 
+			// ดึง Trailer (เหมือนเดิม)
 			const videos = data.videos?.results || [];
-
-			// 1. ค้นหา Trailer ภาษาไทยก่อนเป็นอันดับแรก
-			let trailer = videos.find(
-				(v: any) => v.site === 'YouTube' && v.type === 'Trailer' && v.iso_639_1 === 'th'
-			);
-
-			// 2. ถ้าไม่มีคลิปไทย ให้เอา Trailer ภาษาอังกฤษ/สากล
-			if (!trailer) {
-				trailer = videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer');
-			}
-
-			// 3. ถ้าไม่มีประเภท Trailer เลย ให้เอาวิดีโอ YouTube อันแรกเท่าที่มี (เช่น Teaser/Clip)
-			if (!trailer) {
-				trailer = videos.find((v: any) => v.site === 'YouTube');
-			}
+			let trailer =
+				videos.find(
+					(v: any) => v.site === 'YouTube' && v.type === 'Trailer' && v.iso_639_1 === 'th'
+				) ||
+				videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') ||
+				videos.find((v: any) => v.site === 'YouTube');
 
 			if (trailer && trailer.key) {
 				trailerKey = trailer.key;
@@ -344,50 +339,76 @@
 	}
 
 	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
-async function loadDailyMovie() {
-    const now = new Date();
-    
-    // 1. สร้างวันที่มาตรฐาน (YYYY-MM-DD) ที่เหมือนกันทุกอุปกรณ์บนโลก
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`; // ผลลัพธ์จะได้ เช่น "2026-10-14" เสมอ
+	async function loadDailyMovie() {
+		const now = new Date();
 
-    // 2. ใช้คีย์ v2 เพื่อล้างแคชเก่าที่เคยเซฟค้างไว้ในเครื่อง
-    const storedDate = localStorage.getItem('dailyMovieDate_v2');
-    const storedMovie = localStorage.getItem('dailyMovieData_v2');
+		// 1. สร้างวันที่มาตรฐาน (YYYY-MM-DD) ที่เหมือนกันทุกอุปกรณ์บนโลก
+		const year = now.getFullYear();
+		const month = String(now.getMonth() + 1).padStart(2, '0');
+		const day = String(now.getDate()).padStart(2, '0');
+		const todayStr = `${year}-${month}-${day}`; // ผลลัพธ์จะได้ เช่น "2026-10-14" เสมอ
 
-    if (storedDate === todayStr && storedMovie) {
-        dailyMovie = JSON.parse(storedMovie);
-        return;
-    }
+		// 2. ใช้คีย์ v2 เพื่อล้างแคชเก่าที่เคยเซฟค้างไว้ในเครื่อง
+		const storedDate = localStorage.getItem('dailyMovieDate_v2');
+		const storedMovie = localStorage.getItem('dailyMovieData_v2');
 
-    try {
-        // 3. คำนวณเลข Seed จากวัน-เดือน-ปี (ตรงกันเป๊ะทุกเครื่องแน่นอน)
-        const seed = year * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-        const page = (seed % 400) + 1; 
-        const movieIndex = (seed * 7) % 20;
+		if (storedDate === todayStr && storedMovie) {
+			dailyMovie = JSON.parse(storedMovie);
+			return;
+		}
 
-        const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${page}`;
-        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-        const data = await res.json();
+		try {
+			// 3. คำนวณเลข Seed จากวัน-เดือน-ปี (ตรงกันเป๊ะทุกเครื่องแน่นอน)
+			const seed = year * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+			const page = (seed % 400) + 1;
+			const movieIndex = (seed * 7) % 20;
 
-        if (data.results && data.results.length > 0) {
-            dailyMovie = data.results[movieIndex] || data.results[0];
+			const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${page}`;
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
 
-            // บันทึกลงแคชเวอร์ชัน v2
-            localStorage.setItem('dailyMovieDate_v2', todayStr);
-            localStorage.setItem('dailyMovieData_v2', JSON.stringify(dailyMovie));
-        }
-    } catch (error) {
-        console.error('Error fetching daily movie:', error);
-    }
-}
+			if (data.results && data.results.length > 0) {
+				dailyMovie = data.results[movieIndex] || data.results[0];
 
-// 🚀 สั่งให้ฟังก์ชันทำงานอัตโนมัติตอนโหลดหน้าเว็บเสร็จ
-onMount(() => {
-    loadDailyMovie();
-});
+				// บันทึกลงแคชเวอร์ชัน v2
+				localStorage.setItem('dailyMovieDate_v2', todayStr);
+				localStorage.setItem('dailyMovieData_v2', JSON.stringify(dailyMovie));
+			}
+		} catch (error) {
+			console.error('Error fetching daily movie:', error);
+		}
+	}
+
+	// 🚀 สั่งให้ฟังก์ชันทำงานอัตโนมัติตอนโหลดหน้าเว็บเสร็จ
+	onMount(() => {
+		loadDailyMovie();
+	});
+
+	// 🖱️ ฟังก์ชันแปลงการหมุนเมาส์ขึ้น-ลง เป็นเลื่อนซ้าย-ขวาบน Desktop
+	function horizontalScroll(node: HTMLElement) {
+		const onWheel = (e: WheelEvent) => {
+			if (e.deltaY !== 0) {
+				e.preventDefault(); // ป้องกันไม่ให้ตัว Modal หลักเลื่อนขึ้นลง
+				node.scrollLeft += e.deltaY; // แปลงระยะหมุนเมาส์ไปเลื่อนแนวนอน
+			}
+		};
+
+		// ใส่ passive: false เพื่อให้สามารถ e.preventDefault() ได้ 100%
+		node.addEventListener('wheel', onWheel, { passive: false });
+
+		return {
+			destroy() {
+				node.removeEventListener('wheel', onWheel);
+			}
+		};
+	}
+
+	function scrollCast(direction: 'left' | 'right') {
+		if (castContainer) {
+			const scrollAmount = direction === 'left' ? -200 : 200;
+			castContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+		}
+	}
 </script>
 
 <svelte:head>
@@ -477,71 +498,85 @@ onMount(() => {
 		{/if}
 
 		<!-- 🌟 แบนเนอร์หนังแนะนำประจำวัน (แสดงเฉพาะหน้า home) -->
-{#if viewMode === 'home' && dailyMovie}
-    <div class="my-8 w-full px-4">
-        <h2 class="mb-4 text-2xl font-bold text-white flex items-center gap-2">
-         วันนี้ดูอะไรดี?
-        </h2>
-        
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div 
-            class="group relative overflow-hidden rounded-3xl border border-white/10 bg-black/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all hover:border-white/20 cursor-pointer"
-            onclick={() => openMovieDetails(dailyMovie.id)}
-        >
-            <!-- 🎨 ภาพพื้นหลัง (Backdrop) เบลอและไล่สี -->
-            <div class="absolute inset-0 z-0">
-                <img 
-                    src={`https://image.tmdb.org/t/p/w1280${dailyMovie.backdrop_path || dailyMovie.poster_path}`} 
-                    alt={dailyMovie.title}
-                    class="h-full w-full object-cover opacity-40 transition-transform duration-700 group-hover:scale-105"
-                />
-                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
-                <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent md:via-black/50"></div>
-            </div>
+		{#if viewMode === 'home' && dailyMovie}
+			<div class="my-8 w-full px-4">
+				<h2 class="mb-4 flex items-center gap-2 text-2xl font-bold text-white">วันนี้ดูอะไรดี?</h2>
 
-            <!-- 🎬 เนื้อหาการ์ด -->
-            <div class="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:p-8">
-                <!-- โปสเตอร์ (ซ่อนในมือถือ โชว์ในจอใหญ่) -->
-                <div class="hidden w-32 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-2xl md:block md:w-44">
-                     <img 
-                        src={`https://image.tmdb.org/t/p/w500${dailyMovie.poster_path}`} 
-                        alt={dailyMovie.title}
-                        class="h-full w-full object-cover"
-                    />
-                </div>
-                
-                <!-- รายละเอียด -->
-                <div class="flex flex-col justify-center">
-                    <div class="mb-3">
-                        <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md">
-                            Pick Of The Day 🍿
-                        </span>
-                    </div>
-                    <h3 class="mb-2 text-3xl font-bold text-white drop-shadow-md md:text-4xl">{dailyMovie.title}</h3>
-                    
-                    <div class="mb-4 flex items-center gap-3 text-sm text-gray-300">
-                        <span class="rounded-md bg-white/10 px-2 py-0.5 font-bold text-yellow-400 backdrop-blur-sm">
-                            ⭐ IMDB {dailyMovie.vote_average?.toFixed(1) || 'N/A'}
-                        </span>
-                        <span>•</span>
-                        <span>{dailyMovie.release_date?.split('-')[0] || 'N/A'}</span>
-                    </div>
-                    
-                    <p class="mb-4 text-sm leading-relaxed text-gray-300 md:text-base line-clamp-3 max-w-3xl">
-                        {dailyMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
-                    </p>
-                    
-                    <div>
-                        <button class="cursor-pointer rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-gray-200 active:scale-95 shadow-lg">
-                            ดูรายละเอียด
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-{/if}
+				<!-- svelte-ignore a11y_click_events_have_key_events -->
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-black/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all hover:border-white/20"
+					onclick={() => openMovieDetails(dailyMovie.id)}
+				>
+					<!-- 🎨 ภาพพื้นหลัง (Backdrop) เบลอและไล่สี -->
+					<div class="absolute inset-0 z-0">
+						<img
+							src={`https://image.tmdb.org/t/p/w1280${dailyMovie.backdrop_path || dailyMovie.poster_path}`}
+							alt={dailyMovie.title}
+							class="h-full w-full object-cover opacity-40 transition-transform duration-700 group-hover:scale-105"
+						/>
+						<div
+							class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"
+						></div>
+						<div
+							class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent md:via-black/50"
+						></div>
+					</div>
+
+					<!-- 🎬 เนื้อหาการ์ด -->
+					<div class="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:p-8">
+						<!-- โปสเตอร์ (ซ่อนในมือถือ โชว์ในจอใหญ่) -->
+						<div
+							class="hidden w-32 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-2xl md:block md:w-44"
+						>
+							<img
+								src={`https://image.tmdb.org/t/p/w500${dailyMovie.poster_path}`}
+								alt={dailyMovie.title}
+								class="h-full w-full object-cover"
+							/>
+						</div>
+
+						<!-- รายละเอียด -->
+						<div class="flex flex-col justify-center">
+							<div class="mb-3">
+								<span
+									class="inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md"
+								>
+									Pick Of The Day 🍿
+								</span>
+							</div>
+							<h3 class="mb-2 text-3xl font-bold text-white drop-shadow-md md:text-4xl">
+								{dailyMovie.title}
+							</h3>
+
+							<div class="mb-4 flex items-center gap-3 text-sm text-gray-300">
+								<span
+									class="rounded-md bg-white/10 px-2 py-0.5 font-bold text-yellow-400 backdrop-blur-sm"
+								>
+									⭐ IMDB {dailyMovie.vote_average?.toFixed(1) || 'N/A'}
+								</span>
+								<span>•</span>
+								<span>{dailyMovie.release_date?.split('-')[0] || 'N/A'}</span>
+							</div>
+
+							<p
+								class="mb-4 line-clamp-3 max-w-3xl text-sm leading-relaxed text-gray-300 md:text-base"
+							>
+								{dailyMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
+							</p>
+
+							<div>
+								<button
+									class="cursor-pointer rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-black shadow-lg transition-all hover:bg-gray-200 active:scale-95"
+								>
+									ดูรายละเอียด
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		{/if}
 
 		<div class="my-10 w-full px-4">
 			<h2 class="mb-4 text-2xl font-bold text-white">Top 10 เขาดูอะไรกันอยู่ตอนนี้</h2>
@@ -705,59 +740,60 @@ onMount(() => {
 					{/each}
 				</div>
 				<div class="my-8 flex flex-wrap items-center justify-center gap-3 px-4 md:my-10 md:gap-4">
-    <!-- ปุ่มหน้าก่อนหน้า -->
-    <button
-        onclick={() => changePage(currentPage - 1)}
-        disabled={currentPage === 1 || isLoading}
-        class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
-    >
-        ← ก่อนหน้า
-    </button>
+					<!-- ปุ่มหน้าก่อนหน้า -->
+					<button
+						onclick={() => changePage(currentPage - 1)}
+						disabled={currentPage === 1 || isLoading}
+						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+					>
+						← ก่อนหน้า
+					</button>
 
-    <!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้าม (ดันขึ้นบนสุดในมือถือ) -->
-    <form
-        onsubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.currentTarget);
-            const pageNumber = parseInt(formData.get('pageInput') as string);
-            
-            if (pageNumber >= 1 && pageNumber <= totalPages && pageNumber !== currentPage) {
-                changePage(pageNumber);
-            } else {
-                (e.currentTarget.elements.namedItem('pageInput') as HTMLInputElement).value = currentPage.toString();
-            }
-        }}
-        class="order-first mb-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mb-0 md:w-auto md:py-1.5"
-    >
-        <span class="text-sm font-medium text-gray-300">หน้า</span>
-        <input
-            name="pageInput"
-            type="number"
-            min="1"
-            max={totalPages}
-            value={currentPage}
-            title="พิมพ์เลขหน้าแล้วกด Enter"
-            class="w-16 rounded-md border border-white/20 bg-black/40 py-1 text-center text-sm font-bold text-white outline-none transition-all focus:border-red-500 focus:bg-black focus:ring-1 focus:ring-red-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-        />
-        <span class="text-sm font-medium text-gray-300">/ {totalPages}</span>
-        
-        <button
-            type="submit"
-            class="ml-1 cursor-pointer rounded-lg bg-red-600/80 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-red-500 active:scale-95"
-        >
-            สาดไปสมาชิก
-        </button>
-    </form>
+					<!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้าม (ดันขึ้นบนสุดในมือถือ) -->
+					<form
+						onsubmit={(e) => {
+							e.preventDefault();
+							const formData = new FormData(e.currentTarget);
+							const pageNumber = parseInt(formData.get('pageInput') as string);
 
-    <!-- ปุ่มหน้าถัดไป -->
-    <button
-        onclick={() => changePage(currentPage + 1)}
-        disabled={currentPage >= totalPages || isLoading}
-        class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
-    >
-        ถัดไป →
-    </button>
-</div>
+							if (pageNumber >= 1 && pageNumber <= totalPages && pageNumber !== currentPage) {
+								changePage(pageNumber);
+							} else {
+								(e.currentTarget.elements.namedItem('pageInput') as HTMLInputElement).value =
+									currentPage.toString();
+							}
+						}}
+						class="order-first mb-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mb-0 md:w-auto md:py-1.5"
+					>
+						<span class="text-sm font-medium text-gray-300">หน้า</span>
+						<input
+							name="pageInput"
+							type="number"
+							min="1"
+							max={totalPages}
+							value={currentPage}
+							title="พิมพ์เลขหน้าแล้วกด Enter"
+							class="w-16 rounded-md border border-white/20 bg-black/40 py-1 text-center text-sm font-bold text-white transition-all outline-none focus:border-red-500 focus:bg-black focus:ring-1 focus:ring-red-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+						/>
+						<span class="text-sm font-medium text-gray-300">/ {totalPages}</span>
+
+						<button
+							type="submit"
+							class="ml-1 cursor-pointer rounded-lg bg-red-600/80 px-3 py-1.5 text-xs font-bold text-white shadow-md transition-all hover:bg-red-500 active:scale-95"
+						>
+							สาดไปสมาชิก
+						</button>
+					</form>
+
+					<!-- ปุ่มหน้าถัดไป -->
+					<button
+						onclick={() => changePage(currentPage + 1)}
+						disabled={currentPage >= totalPages || isLoading}
+						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+					>
+						ถัดไป →
+					</button>
+				</div>
 			{:else}
 				<div
 					class="rounded-2xl border border-white/5 bg-white/5 py-16 text-center text-gray-400 backdrop-blur-sm"
@@ -923,16 +959,19 @@ onMount(() => {
 
 {#if isDetailModalOpen}
 	<!-- Backdrop คลิกพื้นหลังเพื่อปิด Modal ได้ -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md transition-all duration-300"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) closeModal();
 		}}
 	>
+		<!-- 🌟 ตัวกล่อง Modal (ตั้งค่าเป็น Flex Column ล็อกความสูงไม่เกิน 85vh) -->
 		<div
-			class="animate-in fade-in zoom-in relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl"
+			class="animate-in fade-in zoom-in relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl"
 		>
-			<!-- ❌ ปุ่มปิด X มุมขวาบน (แสดงเฉพาะบนมือถือ ซ่อนบน Desktop อัตโนมัติ) -->
+			<!-- ❌ ปุ่มปิด X มุมขวาบน (แสดงเฉพาะบนมือถือ) -->
 			<button
 				type="button"
 				onclick={closeModal}
@@ -958,9 +997,9 @@ onMount(() => {
 					<p>กำลังโหลดใจเย็น ๆ</p>
 				</div>
 			{:else if selectedMovieDetails}
-				<!-- รายละเอียดหนัง -->
+				<!-- 1. 📜 ส่วนเนื้อหาข้อมูลหนัง (สโครลเลื่อนดูได้เฉพาะส่วนนี้เมื่อเนื้อหายาว) -->
 				<div
-					class="flex max-h-[85vh] [scrollbar-width:none] flex-col overflow-y-auto [-ms-overflow-style:none] md:flex-row [&::-webkit-scrollbar]:hidden"
+					class="flex flex-1 [scrollbar-width:none] flex-col overflow-y-auto [-ms-overflow-style:none] md:flex-row [&::-webkit-scrollbar]:hidden"
 				>
 					<!-- โปสเตอร์ด้านซ้าย -->
 					<div class="relative w-full flex-shrink-0 bg-black/40 md:w-1/3">
@@ -1008,14 +1047,12 @@ onMount(() => {
 							{/each}
 						</div>
 
-						<!-- 🎬 ส่วนวิดีโอตัวอย่างหนัง YouTube (แสดงสลับระหว่างปุ่มกดเล่น กับ เครื่องเล่นวิดีโอ) -->
+						<!-- 🎬 ตัวอย่างหนัง YouTube -->
 						{#if isPlayingTrailer && trailerKey}
-							<!-- 1. ใส่ isolate transform translate-z-0 และ Inline Style Mask เพื่อล็อกขอบโค้งให้เด็ดขาด -->
 							<div
 								class="relative isolate mb-4 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
 								style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);"
 							>
-								<!-- 2. เพิ่ม rounded-2xl ที่ <iframe> ด้วยเพื่อล็อกขอบจากด้านในซ้ำอีกชั้น -->
 								<iframe
 									src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1`}
 									title="Movie Trailer"
@@ -1024,7 +1061,6 @@ onMount(() => {
 									allowfullscreen
 								></iframe>
 
-								<!-- ปุ่มปิดตัวอย่างหนัง -->
 								<button
 									type="button"
 									onclick={() => (isPlayingTrailer = false)}
@@ -1034,7 +1070,6 @@ onMount(() => {
 								</button>
 							</div>
 						{:else if trailerKey}
-							<!-- ปุ่มกดเปิด Trailer (เก็บไว้เหมือนเดิม) -->
 							<button
 								type="button"
 								onclick={() => (isPlayingTrailer = true)}
@@ -1053,7 +1088,7 @@ onMount(() => {
 							</p>
 						</div>
 
-						<!-- แพลตฟอร์มสตรีมมิ่ง (ดึงเฉพาะประเทศ TH) -->
+						<!-- แพลตฟอร์มสตรีมมิ่ง -->
 						<div class="mb-6">
 							<h4 class="mb-3 text-sm font-semibold text-gray-400">ดูได้ที่ไหนบ้าง (สตรีมมิ่ง)</h4>
 							<div class="flex flex-wrap gap-3">
@@ -1076,15 +1111,91 @@ onMount(() => {
 							</div>
 						</div>
 
-						<!-- ปุ่มปิดด้านล่าง -->
-						<button
-							type="button"
-							onclick={closeModal}
-							class="w-full cursor-pointer rounded-xl border border-white/10 bg-white/10 py-3 text-sm font-bold text-white transition-all hover:bg-white/20 active:scale-95"
-						>
-							ปิดหน้าต่าง
-						</button>
+						<!-- นักแสดงนำ -->
+						<!-- 🎭 ส่วนแสดงรายชื่อนักแสดงนำ -->
+						{#if selectedMovieDetails?.credits?.cast && selectedMovieDetails.credits.cast.length > 0}
+							<div class="mt-2 border-t border-white/10 pt-4">
+								<div class="mb-3 flex items-center justify-between">
+									<h4 class="text-sm font-semibold text-gray-300">นักแสดงนำ</h4>
+
+									<!-- 🎯 ปุ่มลูกศรเลื่อนซ้าย-ขวา (แสดงเฉพาะ Desktop) -->
+									<div class="hidden items-center gap-1 md:flex">
+										<button
+											type="button"
+											onclick={() => scrollCast('left')}
+											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+											title="เลื่อนซ้าย"
+										>
+											◀
+										</button>
+										<button
+											type="button"
+											onclick={() => scrollCast('right')}
+											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+											title="เลื่อนขวา"
+										>
+											▶
+										</button>
+									</div>
+								</div>
+
+								<!-- 🌟 ใส่ bind:this และ use:horizontalScroll เพื่อให้หมุนลูกกลิ้งเมาส์เลื่อนข้างได้ -->
+								<div
+									bind:this={castContainer}
+									use:horizontalScroll
+									class="flex cursor-grab scrollbar-none gap-4 overflow-x-auto scroll-smooth pb-2 active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
+								>
+									{#each selectedMovieDetails.credits.cast.slice(0, 10) as actor}
+										<div
+											class="flex w-20 flex-shrink-0 flex-col items-center text-center select-none"
+										>
+											<div
+												class="mb-2 h-16 w-16 overflow-hidden rounded-full border border-white/10 bg-black/40 shadow-md"
+											>
+												{#if actor.profile_path}
+													<img
+														src={`https://image.tmdb.org/t/p/w185${actor.profile_path}`}
+														alt={actor.name}
+														class="h-full w-full object-cover transition-transform duration-300 hover:scale-110"
+														loading="lazy"
+													/>
+												{:else}
+													<div
+														class="flex h-full w-full items-center justify-center text-xl text-gray-500"
+													>
+														👤
+													</div>
+												{/if}
+											</div>
+											<span
+												class="line-clamp-1 w-full text-xs font-bold text-white"
+												title={actor.name}
+											>
+												{actor.name}
+											</span>
+											<span
+												class="line-clamp-1 w-full text-[10px] text-gray-400"
+												title={actor.character}
+											>
+												{actor.character || 'นักแสดง'}
+											</span>
+										</div>
+									{/each}
+								</div>
+							</div>
+						{/if}
 					</div>
+				</div>
+
+				<!-- 2. 📌 ส่วน Footer ล็อกปุ่มปิดให้อยู่ด้านล่างสุดตลอดเวลา (Pinned Footer) -->
+				<div class="flex-shrink-0 border-t border-white/10 bg-black/40 p-4 backdrop-blur-md md:p-5">
+					<button
+						type="button"
+						onclick={closeModal}
+						class="w-full cursor-pointer rounded-xl border border-white/10 bg-white/10 py-3 text-sm font-bold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/20 active:scale-95"
+					>
+						ปิดหน้าต่าง
+					</button>
 				</div>
 			{/if}
 		</div>
