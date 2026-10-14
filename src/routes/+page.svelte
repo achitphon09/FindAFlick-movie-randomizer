@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
+	import { onMount } from 'svelte';
 
 	let { data }: PageProps = $props();
 	let genres = $derived(data.genres || []);
@@ -39,6 +40,9 @@
 	let selectedProviderId = $state<number | null>(null);
 
 	let randomMovieProviders = $state<any[]>([]);
+
+	// 🌟 ตัวแปรเก็บหนังแนะนำประจำวัน
+	let dailyMovie = $state<any>(null);
 
 	// 1. ดึงหนังตามหมวดหมู่
 	// เมื่อผู้ใช้เลือกหมวดหมู่
@@ -338,6 +342,48 @@
 			isLoading = false;
 		}
 	}
+
+	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
+async function loadDailyMovie() {
+    // 1. ดึงวันที่ปัจจุบัน (เช่น "14/10/2026")
+    const today = new Date().toLocaleDateString('th-TH');
+    
+    // 2. เช็กข้อมูลใน Local Storage ว่ามีของวันนี้เซฟไว้ไหม
+    const storedDate = localStorage.getItem('dailyMovieDate');
+    const storedMovie = localStorage.getItem('dailyMovieData');
+
+    if (storedDate === today && storedMovie) {
+        // ✅ ถ้าเป็นของวันนี้ ให้ใช้ข้อมูลเดิมเลย (หนังจะไม่เปลี่ยนจนกว่าจะข้ามวัน)
+        dailyMovie = JSON.parse(storedMovie);
+        return;
+    }
+
+    // 🎲 ถ้าเพิ่งเปิดครั้งแรกของวัน หรือข้ามวันแล้ว ให้สุ่มใหม่
+    try {
+        // TMDB มีหน้าสูงสุดที่ให้ค้นหาได้ประมาณ 500 หน้า เราจะสุ่มหน้า 1 ถึง 500
+        const randomPage = Math.floor(Math.random() * 500) + 1;
+        const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${randomPage}`;
+        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+        const data = await res.json();
+
+        if (data.results && data.results.length > 0) {
+            // สุ่มเลือก 1 เรื่องจาก 20 เรื่องในหน้านั้น
+            const randomIndex = Math.floor(Math.random() * data.results.length);
+            dailyMovie = data.results[randomIndex];
+
+            // 💾 บันทึกวันที่และข้อมูลหนังลง Local Storage เพื่อให้จำไว้ใช้ทั้งวัน
+            localStorage.setItem('dailyMovieDate', today);
+            localStorage.setItem('dailyMovieData', JSON.stringify(dailyMovie));
+        }
+    } catch (error) {
+        console.error('Error fetching daily movie:', error);
+    }
+}
+
+// 🚀 สั่งให้ฟังก์ชันทำงานอัตโนมัติตอนโหลดหน้าเว็บเสร็จ
+onMount(() => {
+    loadDailyMovie();
+});
 </script>
 
 <svelte:head>
@@ -425,6 +471,73 @@
 				{/each}
 			</div>
 		{/if}
+
+		<!-- 🌟 แบนเนอร์หนังแนะนำประจำวัน (แสดงเฉพาะหน้า home) -->
+{#if viewMode === 'home' && dailyMovie}
+    <div class="my-8 w-full px-4">
+        <h2 class="mb-4 text-2xl font-bold text-white flex items-center gap-2">
+         หนังที่แซมมี่อยากให้คุณดูประจำวันนี้
+        </h2>
+        
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div 
+            class="group relative overflow-hidden rounded-3xl border border-white/10 bg-black/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all hover:border-white/20 cursor-pointer"
+            onclick={() => openMovieDetails(dailyMovie.id)}
+        >
+            <!-- 🎨 ภาพพื้นหลัง (Backdrop) เบลอและไล่สี -->
+            <div class="absolute inset-0 z-0">
+                <img 
+                    src={`https://image.tmdb.org/t/p/w1280${dailyMovie.backdrop_path || dailyMovie.poster_path}`} 
+                    alt={dailyMovie.title}
+                    class="h-full w-full object-cover opacity-40 transition-transform duration-700 group-hover:scale-105"
+                />
+                <div class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+                <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent md:via-black/50"></div>
+            </div>
+
+            <!-- 🎬 เนื้อหาการ์ด -->
+            <div class="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:p-8">
+                <!-- โปสเตอร์ (ซ่อนในมือถือ โชว์ในจอใหญ่) -->
+                <div class="hidden w-32 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 shadow-2xl md:block md:w-44">
+                     <img 
+                        src={`https://image.tmdb.org/t/p/w500${dailyMovie.poster_path}`} 
+                        alt={dailyMovie.title}
+                        class="h-full w-full object-cover"
+                    />
+                </div>
+                
+                <!-- รายละเอียด -->
+                <div class="flex flex-col justify-center">
+                    <div class="mb-3">
+                        <span class="inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md">
+                            หนังดี หนังเด็ด ประจำวัน 🍿
+                        </span>
+                    </div>
+                    <h3 class="mb-2 text-3xl font-bold text-white drop-shadow-md md:text-4xl">{dailyMovie.title}</h3>
+                    
+                    <div class="mb-4 flex items-center gap-3 text-sm text-gray-300">
+                        <span class="rounded-md bg-white/10 px-2 py-0.5 font-bold text-yellow-400 backdrop-blur-sm">
+                            ⭐ IMDB {dailyMovie.vote_average?.toFixed(1) || 'N/A'}
+                        </span>
+                        <span>•</span>
+                        <span>{dailyMovie.release_date?.split('-')[0] || 'N/A'}</span>
+                    </div>
+                    
+                    <p class="mb-4 text-sm leading-relaxed text-gray-300 md:text-base line-clamp-3 max-w-3xl">
+                        {dailyMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับภาพยนตร์เรื่องนี้'}
+                    </p>
+                    
+                    <div>
+                        <button class="cursor-pointer rounded-xl bg-white px-6 py-2.5 text-sm font-bold text-black transition-all hover:bg-gray-200 active:scale-95 shadow-lg">
+                            ดูรายละเอียด
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{/if}
 
 		<div class="my-10 w-full px-4">
 			<h2 class="mb-4 text-2xl font-bold text-white">Top 10 เขาดูอะไรกันอยู่ตอนนี้</h2>
@@ -597,22 +710,20 @@
         ← ก่อนหน้า
     </button>
 
-    <!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้ามแบบรวดเร็ว -->
+    <!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้าม (ดันขึ้นบนสุดในมือถือ) -->
     <form
         onsubmit={(e) => {
             e.preventDefault();
             const formData = new FormData(e.currentTarget);
             const pageNumber = parseInt(formData.get('pageInput') as string);
             
-            // เช็กว่ากรอกเลขถูกต้อง (ไม่น้อยกว่า 1, ไม่เกินหน้าที่มีทั้งหมด และไม่ใช่หน้าปัจจุบัน)
             if (pageNumber >= 1 && pageNumber <= totalPages && pageNumber !== currentPage) {
                 changePage(pageNumber);
             } else {
-                // ถ้ากรอกเลขผิด หรือเป็นหน้าปัจจุบัน ให้รีเซ็ตกลับเป็นเลขหน้าเดิม
                 (e.currentTarget.elements.namedItem('pageInput') as HTMLInputElement).value = currentPage.toString();
             }
         }}
-        class="order-last mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mt-0 md:w-auto md:py-1.5"
+        class="order-first mb-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mb-0 md:w-auto md:py-1.5"
     >
         <span class="text-sm font-medium text-gray-300">หน้า</span>
         <input
