@@ -83,17 +83,19 @@
 	/* 2.พิมพ์ค้นหาหนังจากชื่อที่ผู้ใช้กรอก */
 
 	/* 3.เปลี่ยนหน้าเว็บ (Pagination) แล้วดึงข้อมูลหนังหน้าใหม่ */
-	function changePage(newPage: number) {
-		if (newPage >= 1 && newPage <= totalPages) {
-			currentPage = newPage;
-			if (viewMode === 'search') {
-				searchMovies();
-			} else if (viewMode === 'filter' || selectedGenreId !== null || selectedProviderId !== null) {
-				applyFilters(currentPage);
-			} else {
-				fetchMovies();
-			}
-			window.scrollTo({ top: 0, behavior: 'smooth' });
+	async function changePage(newPage: number) {
+		if (newPage < 1 || newPage > totalPages) return; // ป้องกันไม่ให้กดเลยขอบเขตหน้า
+
+		currentPage = newPage; // อัปเดตเลขหน้าปัจจุบัน
+		window.scrollTo({ top: 0, behavior: 'smooth' }); // เลื่อนจอขึ้นด้านบนสุดเบาๆ
+
+		// เช็กว่าตอนนี้ผู้ใช้กำลังดูหน้าจอโหมดไหนอยู่ แล้วเรียกฟังก์ชันดึงข้อมูลให้ถูกโหมด
+		if (isSearching) {
+			// ถ้ากำลังอยู่ในโหมดค้นหา ให้ดึงข้อมูลหน้าใหม่ของการค้นหา
+			await searchMovies(currentPage);
+		} else {
+			// ถ้าอยู่โหมดปกติ (หน้าแรก, หมวดหมู่, แพลตฟอร์ม หรือ Marvel) ให้เรียก applyFilters โหลดหน้าใหม่
+			await applyFilters(currentPage);
 		}
 	}
 	/* 3.เปลี่ยนหน้าเว็บ (Pagination) แล้วดึงข้อมูลหนังหน้าใหม่ */
