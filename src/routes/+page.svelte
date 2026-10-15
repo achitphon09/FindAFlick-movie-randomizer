@@ -98,65 +98,27 @@
 		}
 	}
 
-	// 3. สุ่มหนัง (หน้า 1-500)
-	async function pickRandomMovie() {
-		isShaking = true;
-		setTimeout(() => {
-			isShaking = false;
-		}, 400);
+	// 🌟 ฟังก์ชันเปลี่ยนหน้าแบบครอบจักรวาล (รองรับทั้งหน้าหลัก ค้นหา และตัวกรองผสม)
+function changePage(newPage: number) {
+    if (newPage >= 1 && newPage <= totalPages) {
+        currentPage = newPage; // อัปเดตเลขหน้าปัจจุบัน
+        
+        // เช็กว่าปัจจุบันผู้ใช้อยู่ในโหมดไหน เพื่อยิง API ให้ถูกต้อง
+        if (viewMode === 'search') {
+            searchMovies(); // ยิง API ค้นหาชื่อหนัง (ถ้ามี)
+        } else if (viewMode === 'filter' || selectedGenreId !== null || selectedProviderId !== null) {
+            // 🎯 ถ้ามีการเลือกหมวดหมู่ หรือ แพลตฟอร์ม ให้โยนเลขหน้าเข้า applyFilters
+            applyFilters(currentPage);
+        } else {
+            // โหมดหน้าหลักปกติ
+            fetchMovies(); 
+        }
 
-		try {
-			const randomPage = Math.floor(Math.random() * 500) + 1;
-			let queryPath = `/discover/movie?language=th-TH&page=${randomPage}`;
-			if (selectedGenreId && !isSearching) {
-				queryPath += `&with_genres=${selectedGenreId}`;
-			}
+        // เลื่อนหน้าจอกลับไปด้านบนสุดอัตโนมัติ เพื่อให้ผู้ใช้ดูหนังเรื่องแรกของหน้าใหม่
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
 
-			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(queryPath)}`);
-			const data = await res.json();
-
-			let pickedMovie;
-			if (data.results && data.results.length > 0) {
-				pickedMovie = data.results[Math.floor(Math.random() * data.results.length)];
-			} else if (movies.length > 0) {
-				pickedMovie = movies[Math.floor(Math.random() * movies.length)];
-			} else {
-				return;
-			}
-
-			// ดึงสตรีมมิ่งผ่าน Endpoint ของเราเช่นกัน
-			const detailRes = await fetch(
-				`/api/movies?endpoint=${encodeURIComponent(`/movie/${pickedMovie.id}?language=th-TH&append_to_response=watch/providers`)}`
-			);
-			randomMovie = await detailRes.json();
-
-			isModalOpen = true;
-		} catch (error) {
-			console.error('Error picking random movie:', error);
-		}
-		if (randomMovie?.id) {
-			fetchRandomMovieTrailer(randomMovie.id);
-		}
-	}
-
-	function changePage(newPage: number) {
-		if (newPage < 1 || newPage > totalPages) return;
-
-		window.scrollTo({ top: 0, behavior: 'smooth' }); // เลื่อนขึ้นบนสุดอัตโนมัติ
-
-		// เช็คชัดเจนว่าตอนนี้อยู่โหมดค้นหา หรือโหมดหมวดหมู่
-		if (isSearching && searchQuery.trim() !== '') {
-			searchMovies(newPage);
-		} else if (selectedGenreId !== null) {
-			fetchMoviesByGenre(selectedGenreId, newPage);
-		} else {
-			// กรณีสำรอง ถ้าไม่มีสถานะอะไรเลย ให้ดึงหน้าแรกของหมวดแรกสุด
-			if (genres.length > 0) {
-				selectedGenreId = genres[0].id;
-				fetchMoviesByGenre(selectedGenreId, newPage);
-			}
-		}
-	}
 	// ฟังก์ชันแปลงเวลาหนัง
 	function formatRuntime(minutes: number) {
 		if (!minutes) return 'ไม่ระบุเวลา';
@@ -282,62 +244,6 @@
 		randomMovieProviders = []; // 👈 เพิ่มบรรทัดนี้
 	}
 
-	// 📺 ฟังก์ชันกรองตามสตรีมมิ่ง (เซฟตี้ ไม่ตีกับหมวดหมู่)
-	async function filterByPlatform(providerId: number | null) {
-		// 1. 🛡️ เคลียร์สถานะหมวดหมู่เดิมและคำค้นหาทันที ป้องกันข้อมูลซ้ำซ้อน
-		selectedGenreId = null;
-		searchQuery = '';
-
-		// ถ้ากดปุ่ม "ทั้งหมด" ให้กลับไปหน้าแรก
-		if (providerId === null) {
-			selectedProviderId = null;
-			viewMode = 'home';
-			movies = [];
-			return;
-		}
-
-		selectedProviderId = providerId;
-		viewMode = 'provider'; // 👈 ตั้งโหมดเป็น provider ชัดเจน
-		isLoading = true;
-
-		try {
-			const endpoint = `/discover/movie?language=th-TH&watch_region=TH&with_watch_providers=${providerId}&with_watch_monetization_types=flatrate&sort_by=popularity.desc&page=1`;
-			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-			const data = await res.json();
-
-			movies = data.results || [];
-		} catch (e) {
-			console.error('Error fetching platform movies:', e);
-		} finally {
-			isLoading = false;
-		}
-	}
-
-	// 📌 ⚠️ สำคัญมาก: ในฟังก์ชันกดเลือกหมวดหมู่เดิม (เช่น filterByGenre) ให้ใส่บรรทัดนี้ไว้ด้วย
-	async function filterByGenre(genreId: number) {
-		// 1. 🛡️ เคลียร์สถานะอื่นๆ ออกทันที ไม่ให้ข้อมูลตีกัน
-		selectedProviderId = null; // ล้างค่าสตรีมมิ่งออก เวลาสลับมาเลือกหมวดหมู่ปกติ
-		searchQuery = ''; // ล้างคำค้นหาเดิมออก
-		selectedGenreId = genreId;
-		viewMode = 'genre';
-		isLoading = true;
-
-		try {
-			// 2. ยิง API ผ่าน TMDB Endpoint สำหรับกรองตามหมวดหมู่ (เรียงตามความนิยม)
-			const endpoint = `/discover/movie?language=th-TH&with_genres=${genreId}&sort_by=popularity.desc&page=1`;
-			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-			const data = await res.json();
-
-			// 3. นำผลลัพธ์ใส่ตัวแปร movies เพื่อแสดงการ์ดหนังบนหน้าจอ
-			movies = data.results || [];
-		} catch (e) {
-			console.error('Error fetching movies by genre:', e);
-			movies = [];
-		} finally {
-			isLoading = false;
-		}
-	}
-
 	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
 	async function loadDailyMovie() {
 		const now = new Date();
@@ -409,6 +315,132 @@
 			castContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
 		}
 	}
+
+	// 🌟 1. อัปเดตแพลตฟอร์มสตรีมมิ่ง (เพิ่ม Apple TV+)
+const streamingPlatforms = [
+    { id: 8, name: 'Netflix', bgColor: 'hover:bg-red-600', activeColor: 'bg-red-600' },
+    { id: 122, name: 'Disney+', bgColor: 'hover:bg-blue-600', activeColor: 'bg-blue-600' }, 
+    { id: 315, name: 'HBO GO', bgColor: 'hover:bg-purple-600', activeColor: 'bg-purple-600' },
+    { id: 119, name: 'Prime Video', bgColor: 'hover:bg-cyan-600', activeColor: 'bg-cyan-600' },
+    { id: 191, name: 'iQIYI', bgColor: 'hover:bg-green-500', activeColor: 'bg-green-500' },
+    { id: 350, name: 'Apple TV+', bgColor: 'hover:bg-gray-600', activeColor: 'bg-gray-600' }
+];
+
+// 🌟 2. ฟังก์ชันหลักสำหรับดึงหนังตามตัวกรองที่ผสมกัน
+async function applyFilters(pageNumber = 1) {
+    searchQuery = ''; // ล้างคำค้นหาเมื่อกดปุ่มกรอง
+    currentPage = pageNumber;
+    isLoading = true;
+
+    // ตรวจสอบโหมด
+    if (selectedGenreId === null && selectedProviderId === null) {
+        viewMode = 'home';
+    } else {
+        viewMode = 'filter'; // ใช้ชื่อโหมดรวม
+    }
+
+    try {
+        // ต่อ String URL ตามตัวกรองที่มี
+        let endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${currentPage}`;
+        
+        if (selectedGenreId) {
+            endpoint += `&with_genres=${selectedGenreId}`;
+        }
+        if (selectedProviderId) {
+            endpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
+        }
+
+        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+        const data = await res.json();
+
+        movies = data.results || [];
+        totalPages = Math.min(data.total_pages || 1, 500);
+    } catch (e) {
+        console.error('Error fetching filtered movies:', e);
+        movies = [];
+    } finally {
+        isLoading = false;
+    }
+}
+
+// 🌟 3. ฟังก์ชันเปิด/ปิด ปุ่มหมวดหมู่
+function toggleGenre(genreId: number) {
+    if (selectedGenreId === genreId) {
+        selectedGenreId = null; // ถ้าย้ำปุ่มเดิม = ปิดตัวกรอง
+    } else {
+        selectedGenreId = genreId; // ถ้ากดปุ่มใหม่ = เลือกหมวดหมู่
+    }
+    applyFilters(1);
+}
+
+// 🌟 4. ฟังก์ชันเปิด/ปิด ปุ่มแพลตฟอร์มสตรีมมิ่ง
+function togglePlatform(providerId: number | null) {
+    if (providerId === null || selectedProviderId === providerId) {
+        selectedProviderId = null; // เคลียร์ตัวกรองสตรีมมิ่ง
+    } else {
+        selectedProviderId = providerId;
+    }
+    applyFilters(1);
+}
+
+// 🌟 5. อัปเกรดฟังก์ชันสุ่มหนัง ให้สุ่มตาม "ตัวกรองผสม" ที่ผู้ใช้อยู่
+async function pickRandomMovie() {
+    isModalOpen = true;
+    randomMovie = null;
+    randomTrailerKey = null;
+    isPlayingRandomMovieTrailer = false;
+    randomMovieProviders = [];
+
+    try {
+        // 5.1 สร้าง URL ตามหมวดหมู่และแพลตฟอร์มที่เลือกไว้
+        let baseEndpoint = `/discover/movie?language=th-TH`;
+        if (selectedGenreId) baseEndpoint += `&with_genres=${selectedGenreId}`;
+        if (selectedProviderId) baseEndpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
+
+        // 5.2 เช็กก่อนว่าตัวกรองที่เลือกมันมีหนังให้สุ่มไหม
+        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + '&page=1')}`);
+        const initialData = await res.json();
+
+        if (!initialData.results || initialData.results.length === 0) {
+            alert('😅 ไม่พบหนังที่ตรงกับหมวดหมู่และสตรีมมิ่งนี้รวมกันครับ ลองเปลี่ยนตัวกรองดูนะ');
+            isModalOpen = false;
+            return;
+        }
+
+        // 5.3 สุ่มหน้า และ สุ่มลำดับหนัง
+        const maxPage = Math.min(initialData.total_pages, 500);
+        const randomPage = Math.floor(Math.random() * maxPage) + 1;
+
+        const pageRes = await fetch(`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + `&page=${randomPage}`)}`);
+        const pageData = await pageRes.json();
+        
+        const randomIndex = Math.floor(Math.random() * pageData.results.length);
+        const pickedMovie = pageData.results[randomIndex];
+
+        // 5.4 ดึงข้อมูลเชิงลึกมาใส่ Modal (วิดีโอ, แพลตฟอร์ม)
+        const detailEndpoint = `/movie/${pickedMovie.id}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
+        const detailRes = await fetch(`/api/movies?endpoint=${encodeURIComponent(detailEndpoint)}`);
+        const detailData = await detailRes.json();
+
+        randomMovie = detailData;
+
+        // จัดการคลิปวิดีโอ
+        const videos = detailData.videos?.results || [];
+        let trailer = videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer' && v.iso_639_1 === 'th') 
+                   || videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') 
+                   || videos.find((v: any) => v.site === 'YouTube');
+        if (trailer) randomTrailerKey = trailer.key;
+
+        // จัดการแสดงแพลตฟอร์มใน Modal
+        if (detailData['watch/providers']?.results?.TH?.flatrate) {
+            randomMovieProviders = detailData['watch/providers'].results.TH.flatrate;
+        }
+    } catch (e) {
+        console.error('Error fetching random movie:', e);
+        isModalOpen = false;
+    }
+}
+
 </script>
 
 <svelte:head>
@@ -430,7 +462,7 @@
 				disabled={movies.length === 0 || isLoading}
 				class="cursor-pointer rounded-full bg-gradient-to-r from-red-600 to-orange-600 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-red-600/40 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
 			>
-				🎲 ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
+			ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
 			</button>
 		</div>
 
@@ -469,33 +501,85 @@
 			</div>
 		</div>
 
-		<!-- 🗂️ กลุ่มปุ่มหมวดหมู่ -->
-		{#if genres.length > 0}
-			<div
-				class="mb-8 flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pb-4 [-ms-overflow-style:none] sm:gap-3.5 md:mb-12 md:flex-wrap md:justify-center md:overflow-visible md:pb-0 [&::-webkit-scrollbar]:hidden"
-			>
-				{#each genres as genre}
-					<button
-						type="button"
-						onclick={() => {
-							selectedGenreId = genre.id;
-							currentSort = null; // เคลียร์สถานะปุ่ม Sort
-							isSearching = false;
-							searchQuery = '';
+	<!-- 🎛️ แผงควบคุมตัวกรอง (Glassmorphism Filter Panel) -->
+<div>
+    
+    <!-- 📺 1. กลุ่มแพลตฟอร์มสตรีมมิ่ง -->
+    <div class="flex flex-col gap-4">
+        <!-- หัวข้อ & ปุ่มล้างตัวกรอง -->
+        <div class="flex items-center justify-between md:justify-center md:gap-6">
+            <h3 class="text-lg font-bold tracking-wide text-white md:text-xl">
+                แพลตฟอร์มสตรีมมิ่ง
+            </h3>
+            
+            {#if selectedProviderId || selectedGenreId}
+                <button
+                    type="button"
+                    onclick={() => { togglePlatform(null); if (selectedGenreId) toggleGenre(selectedGenreId); }}
+                    class="flex items-center cursor-pointer gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-white/20 hover:text-white hover:shadow-[0_4px_16px_rgba(255,255,255,0.1)] active:scale-95"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-3.5 w-3.5">
+                        <path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" />
+                    </svg>
+                    ล้างตัวกรอง
+                </button>
+            {/if}
+        </div>
+        
+        <!-- แถบปุ่มแพลตฟอร์ม -->
+        <div class="flex gap-3 overflow-x-auto pb-3 scrollbar-none [&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center md:overflow-visible">
+            <!-- ปุ่มรวมทุกแพลตฟอร์ม -->
+            <button
+                type="button"
+                onclick={() => togglePlatform(null)}
+                class="flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-bold backdrop-blur-md transition-all duration-300 active:scale-95 {selectedProviderId === null
+                    ? 'border-white/40 bg-white/20 text-white shadow-[0_0_20px_rgba(255,255,255,0.15)]'
+                    : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:bg-white/10 hover:text-white'}"
+            >
+                ทั้งหมด
+            </button>
 
-							fetchMoviesByGenre(genre.id);
-						}}
-						class={`flex-shrink-0 cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold tracking-wide whitespace-nowrap backdrop-blur-md transition-all duration-300 active:scale-95 sm:px-6 sm:py-2.5 sm:text-base ${
-							selectedGenreId === genre.id && !isSearching && !currentSort
-								? 'scale-105 border-red-500/50 bg-red-500/35 text-white shadow-[0_0_15px_rgba(239,68,68,0.35)] drop-shadow-[0_2px_8px_rgba(239,68,68,0.2)]'
-								: 'border-white/10 bg-white/5 text-gray-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_4px_12px_rgba(255,255,255,0.05)]'
-						}`}
-					>
-						{genre.name}
-					</button>
-				{/each}
-			</div>
-		{/if}
+            <!-- ลูปปุ่มแพลตฟอร์ม -->
+            {#each streamingPlatforms as platform}
+                <button
+                    type="button"
+                    onclick={() => togglePlatform(platform.id)}
+                    class="flex flex-shrink-0 cursor-pointer items-center gap-2 rounded-2xl border px-5 py-2.5 text-sm font-bold backdrop-blur-md transition-all duration-300 active:scale-95 
+                    {selectedProviderId === platform.id
+                        ? `border-transparent ${platform.activeColor} text-white shadow-[0_0_20px_rgba(255,255,255,0.2)]`
+                        : `border-white/10 bg-white/5 text-gray-400 ${platform.bgColor} hover:border-white/30 hover:text-white`}"
+                >
+                    {platform.name}
+                </button>
+            {/each}
+        </div>
+    </div>
+
+    <!-- 〰️ เส้นแบ่งสัดส่วน (Divider) 〰️ -->
+    <div class="mx-auto w-3/4 border-t border-white/10 md:w-1/2"></div>
+
+    <!-- 🏷️ 2. กลุ่มหมวดหมู่ภาพยนตร์ -->
+    <div class="flex flex-col gap-4 mt-4 md:text-center">
+        <h3 class="text-lg font-bold tracking-wide text-white md:text-xl">
+            หมวดหมู่ภาพยนตร์
+        </h3>
+        
+        <!-- แถบปุ่มหมวดหมู่ -->
+        <div class="flex gap-2.5 overflow-x-auto pb-3 scrollbar-none [&::-webkit-scrollbar]:hidden md:flex-wrap md:justify-center md:overflow-visible">
+            {#each genres as genre}
+                <button
+                    type="button"
+                    onclick={() => toggleGenre(genre.id)}
+                    class="flex-shrink-0 cursor-pointer rounded-2xl border px-4 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 active:scale-95 {selectedGenreId === genre.id
+                        ? 'border-red-400 bg-red-600/80 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+                        : 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:bg-white/10 hover:text-white'}"
+                >
+                    {genre.name}
+                </button>
+            {/each}
+        </div>
+    </div>
+</div>
 
 		<!-- 🌟 แบนเนอร์หนังแนะนำประจำวัน (แสดงเฉพาะหน้า home) -->
 		{#if viewMode === 'home' && dailyMovie}
