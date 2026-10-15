@@ -1,69 +1,50 @@
 <script lang="ts">
 	import type { PageProps } from './$types';
 	import { onMount } from 'svelte';
+	import { tick } from 'svelte';
 
-	let { data }: PageProps = $props();
-	let genres = $derived(data.genres || []);
+	let { data }: PageProps = $props(); // รับข้อมูลเริ่มต้นจาก Server
+	let genres = $derived(data.genres || []); // รายชื่อหมวดหมู่หนัง (อัปเดตออโต้)
+	let movies = $state<any[]>([]); // รายชื่อหนังที่แสดงบนหน้าจอ
+	let isLoading = $state(false); // เช็กว่ากำลังโหลดข้อมูลอยู่ไหม
+	let randomMovie = $state<any | null>(null); // ข้อมูลหนังที่สุ่มได้
+	let isModalOpen = $state(false); // เปิด/ปิด หน้าต่างสุ่มหนัง
+	let searchQuery = $state(''); // ข้อความที่พิมพ์ค้นหา
+	let isSearching = $state(false); // เช็กว่ากำลังค้นหาอยู่ไหม
+	let isDetailModalOpen = $state(false); // เปิด/ปิด หน้าต่างดูรายละเอียดหนัง
+	let selectedMovieDetails = $state<any | null>(null); // ข้อมูลรายละเอียดหนังที่กดดู
+	let isDetailLoading = $state(false); // กำลังโหลดรายละเอียดหนังไหม
+	let isShaking = $state(false); // เอฟเฟกต์หน้าจอตอนกดสุ่ม
+	let currentPage = $state(1); // หน้าปัจจุบัน (pagination)
+	let totalPages = $state(500); // จำนวนหน้าทั้งหมด (สูงสุด 500)
+	let topMovies = $state<any[]>([]); // รายชื่อหนัง Top 10
+	let currentSort = $state<string | null>(null); // รูปแบบการเรียงลำดับหนัง
+	let selectedGenreId = $state<number | null>(null); // ID หมวดหมู่ที่เลือก (หรือ 99999 สำหรับ Marvel)
+	let trailerKey = $state<string | null>(null); // รหัสคลิป YouTube ตัวอย่างหนัง
+	let isPlayingTrailer = $state<boolean>(false); // กำลังเล่นตัวอย่างหนังอยู่ไหม
+	let randomTrailerKey = $state<string | null>(null); // รหัสคลิป YouTube ของหนังที่สุ่มได้
+	let isPlayingRandomMovieTrailer = $state<boolean>(false); // กำลังเล่นตัวอย่างหนังที่สุ่มได้ไหม
+	let viewMode = $state<'home' | 'genre' | 'sort' | 'search' | 'provider'>('home'); // สถานะหน้าจอปัจจุบัน
+	let selectedProviderId = $state<number | null>(null); // ID แพลตฟอร์มสตรีมมิ่งที่เลือก
+	let randomMovieProviders = $state<any[]>([]); // แพลตฟอร์มของหนังที่สุ่มได้
+	let dailyMovie = $state<any>(null); // หนังแนะนำประจำวัน
+	let castContainer = $state<HTMLElement | null>(null); // กล่องรายชื่อนักแสดง
+	let mediaType = $state<'movie' | 'tv'>('movie'); // โหมดปัจจุบัน (หนัง หรือ ซีรีส์)
+	let isAnyModalOpen = $derived(isModalOpen || isDetailModalOpen); // เช็กให้แน่ใจว่ามี modal เปิดอยู่ไหม
 
-	let movies = $state<any[]>([]);
-	let isLoading = $state(false);
-	let randomMovie = $state<any | null>(null);
-	let isModalOpen = $state(false);
-
-	// ตัวแปรสำหรับระบบค้นหา
-	let searchQuery = $state('');
-	let isSearching = $state(false);
-
-	// ตัวแปรสำหรับ Modal รายละเอียดหนัง (คลิกที่การ์ด)
-	let isDetailModalOpen = $state(false);
-	let selectedMovieDetails = $state<any | null>(null);
-	let isDetailLoading = $state(false);
-
-	//สั่น
-	let isShaking = $state(false);
-
-	let currentPage = $state(1);
-	let totalPages = $state(500); // TMDB ลิมิตไว้สูงสุด 500 หน้า
-
-	let topMovies = $state<any[]>([]);
-
-	let currentSort = $state<string | null>(null); // เก็บสถานะปุ่ม Sort ปัจจุบัน
-	let selectedGenreId = $state<number | null>(null);
-
-	let trailerKey = $state<string | null>(null);
-	let isPlayingTrailer = $state<boolean>(false);
-
-	let randomTrailerKey = $state<string | null>(null);
-	let isPlayingRandomMovieTrailer = $state<boolean>(false);
-
-	let viewMode = $state<'home' | 'genre' | 'sort' | 'search' | 'provider'>('home');
-	let selectedProviderId = $state<number | null>(null);
-
-	let randomMovieProviders = $state<any[]>([]);
-
-	// 🌟 ตัวแปรเก็บหนังแนะนำประจำวัน
-	let dailyMovie = $state<any>(null);
-
-	// 📌 ตัวแปรอ้างอิง Element แถบนักแสดง สำหรับให้ปุ่มลูกศรกดสั่งเลื่อน
-	let castContainer = $state<HTMLElement | null>(null);
-
-	let mediaType = $state<'movie' | 'tv'>('movie'); // โหมดปัจจุบัน (หนังหรือซีรีส์)
-
-	// 1. ดึงหนังตามหมวดหมู่
-	// เมื่อผู้ใช้เลือกหมวดหมู่
+	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
 		isLoading = true;
 		isSearching = false;
 		searchQuery = '';
 		selectedGenreId = genreId;
-		currentSort = null; // ล้างสถานะ Sort ทิ้งทันที!
+		currentSort = null;
 		currentPage = page;
 
 		try {
 			const endpoint = `/discover/movie?with_genres=${genreId}&language=th-TH&page=${page}`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
-
 			movies = data.results || [];
 			totalPages = data.total_pages > 500 ? 500 : data.total_pages || 1;
 		} catch (e) {
@@ -73,15 +54,15 @@
 			isLoading = false;
 		}
 	}
+	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 
-	// 2. ค้นหาหนัง
+	/* 2.พิมพ์ค้นหาหนังจากชื่อที่ผู้ใช้กรอก */
 	async function searchMovies(page: number = 1) {
-		// เช็กก่อนว่ามีคำค้นหาไหม
 		if (!searchQuery || !searchQuery.trim()) return;
 
 		isLoading = true;
-		isSearching = true; // บังคับเปิดโหมดค้นหา
-		selectedGenreId = null; // เคลียร์ค่าหมวดหมู่ทิ้งทันที เพื่อไม่ให้ตีกัน
+		isSearching = true;
+		selectedGenreId = null;
 		currentPage = page;
 
 		try {
@@ -99,37 +80,34 @@
 			isLoading = false;
 		}
 	}
+	/* 2.พิมพ์ค้นหาหนังจากชื่อที่ผู้ใช้กรอก */
 
-	// 🌟 ฟังก์ชันเปลี่ยนหน้าแบบครอบจักรวาล (รองรับทั้งหน้าหลัก ค้นหา และตัวกรองผสม)
+	/* 3.เปลี่ยนหน้าเว็บ (Pagination) แล้วดึงข้อมูลหนังหน้าใหม่ */
 	function changePage(newPage: number) {
 		if (newPage >= 1 && newPage <= totalPages) {
-			currentPage = newPage; // อัปเดตเลขหน้าปัจจุบัน
-
-			// เช็กว่าปัจจุบันผู้ใช้อยู่ในโหมดไหน เพื่อยิง API ให้ถูกต้อง
+			currentPage = newPage;
 			if (viewMode === 'search') {
-				searchMovies(); // ยิง API ค้นหาชื่อหนัง (ถ้ามี)
+				searchMovies();
 			} else if (viewMode === 'filter' || selectedGenreId !== null || selectedProviderId !== null) {
-				// 🎯 ถ้ามีการเลือกหมวดหมู่ หรือ แพลตฟอร์ม ให้โยนเลขหน้าเข้า applyFilters
 				applyFilters(currentPage);
 			} else {
-				// โหมดหน้าหลักปกติ
 				fetchMovies();
 			}
-
-			// เลื่อนหน้าจอกลับไปด้านบนสุดอัตโนมัติ เพื่อให้ผู้ใช้ดูหนังเรื่องแรกของหน้าใหม่
 			window.scrollTo({ top: 0, behavior: 'smooth' });
 		}
 	}
+	/* 3.เปลี่ยนหน้าเว็บ (Pagination) แล้วดึงข้อมูลหนังหน้าใหม่ */
 
-	// ฟังก์ชันแปลงเวลาหนัง
+	/* 4.แปลงนาทีหนังให้เป็นรูปแบบ ชั่วโมง/นาที ที่อ่านง่าย */
 	function formatRuntime(minutes: number) {
 		if (!minutes) return 'ไม่ระบุเวลา';
 		const h = Math.floor(minutes / 60);
 		const m = minutes % 60;
 		return h > 0 ? `${h} ชม. ${m} นาที` : `${m} นาที`;
 	}
+	/* 4.แปลงนาทีหนังให้เป็นรูปแบบ ชั่วโมง/นาที ที่อ่านง่าย */
 
-	// โหลดหมวดหมู่แรกอัตโนมัติเมื่อเปิดเว็บ
+	/* 5.คอยเช็กอัตโนมัติ: ถ้ายังไม่ได้เลือกหมวดหมู่ ให้เลือกหมวดหมู่แรกและดึงหนังมาแสดงทันทีตอนเข้าเว็บ */
 	$effect(() => {
 		if (selectedGenreId === null && genres.length > 0 && !isSearching) {
 			selectedGenreId = genres[0].id;
@@ -137,34 +115,36 @@
 		}
 	});
 
+	/* 6.คำนวณชื่อหัวข้อที่จะแสดงบนจออัตโนมัติ (เปลี่ยนตามว่ากำลังค้นหา หรือเลือกหมวดหมู่อะไรอยู่) */
 	let currentGenreName = $derived(
 		isSearching
 			? `ค้นหา: "${searchQuery}"`
-			: genres.find((g: { id: number }) => g.id === selectedGenreId)?.name || ''
+			: selectedGenreId === 99999
+				? 'Marvel Cinematic Universe'
+				: genres.find((g: { id: number }) => g.id === selectedGenreId)?.name || ''
 	);
 
+	/* 7.วิ่งไปดึงข้อมูลหนัง Top 10 ประจำวันจาก API */
 	async function fetchTopMovies() {
 		try {
-			// ดึงหนังเรตติ้งสูงสุดจาก TMDB
 			const res = await fetch(
 				`/api/movies?endpoint=${encodeURIComponent(`/movie/top_rated?language=th-TH&page=1`)}`
 			);
 			const data = await res.json();
-
-			// ตัดมาแค่ 10 อันดับแรก
 			topMovies = (data.results || []).slice(0, 10);
 		} catch (e) {
 			console.error('Error fetching top movies:', e);
 			topMovies = [];
 		}
 	}
+	/* 7.วิ่งไปดึงข้อมูลหนัง Top 10 ประจำวันจาก API */
 
-	// เรียกใช้งานตอนโหลดหน้าเว็บ
+	/* 8.เรียกใช้งานตอนโหลดหน้าเว็บ*/
 	$effect(() => {
 		fetchTopMovies();
 	});
 
-	//ฟังก์ชั่นเล่นตัวอย่างหนัง
+	/* 9.กดคลิกเพื่อดึงข้อมูลรายละเอียดของหนังเรื่องนั้นมาแสดงใน Modal */
 	async function openMovieDetails(movieId: number) {
 		isDetailModalOpen = true;
 		isDetailLoading = true;
@@ -173,14 +153,12 @@
 		isPlayingTrailer = false;
 
 		try {
-			// 🍿 พ่วง credits เพิ่มเข้าไปใน append_to_response (คั่นด้วยเครื่องหมายจุลภาค ,)
 			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers,credits&include_video_language=th,en,null`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
 
 			selectedMovieDetails = data;
 
-			// ดึง Trailer (เหมือนเดิม)
 			const videos = data.videos?.results || [];
 			let trailer =
 				videos.find(
@@ -198,26 +176,25 @@
 			isDetailLoading = false;
 		}
 	}
+	/* 9.กดคลิกเพื่อดึงข้อมูลรายละเอียดของหนังเรื่องนั้นมาแสดงใน Modal */
 
-	// 🛡️ ฟังก์ชันปิด Modal แบบล้างค่าทุกอย่าง
+	// 10.ฟังก์ชันปิด Modal แบบล้างค่าทุกอย่าง
 	function closeModal() {
 		isDetailModalOpen = false;
 		isPlayingTrailer = false;
 		trailerKey = null;
 	}
 
+	/* 11.วิ่งไปดึงลิงก์คลิปตัวอย่าง (Trailer) จาก YouTube ของหนังที่สุ่มได้ */
 	async function fetchRandomMovieTrailer(movieId: number) {
 		randomTrailerKey = null;
 		isPlayingRandomMovieTrailer = false;
-		randomMovieProviders = []; // เคลียร์สตรีมมิ่งเก่าก่อนสุ่มใหม่
+		randomMovieProviders = [];
 
 		try {
-			// 🍿 พ่วง watch/providers เข้าไปใน append_to_response ด้วย
 			const endpoint = `/movie/${movieId}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
-
-			// จัดการคลิปวิดีโอ (เหมือนเดิม)
 			const videos = data.videos?.results || [];
 			let trailer =
 				videos.find(
@@ -229,8 +206,6 @@
 			if (trailer && trailer.key) {
 				randomTrailerKey = trailer.key;
 			}
-
-			// 🌟 ดึงข้อมูลสตรีมมิ่งเฉพาะในไทย (TH) แบบเหมาจ่ายรายเดือน (flatrate)
 			if (data['watch/providers']?.results?.TH?.flatrate) {
 				randomMovieProviders = data['watch/providers'].results.TH.flatrate;
 			}
@@ -238,25 +213,24 @@
 			console.error('Error fetching random movie details:', e);
 		}
 	}
+	/* 11.วิ่งไปดึงลิงก์คลิปตัวอย่าง (Trailer) จาก YouTube ของหนังที่สุ่มได้ */
 
+	/* 12.กดปิดหน้าต่าง Modal ของหนังที่สุ่มได้ */
 	function closeRandomModal() {
 		isModalOpen = false;
 		isPlayingRandomMovieTrailer = false;
 		randomTrailerKey = null;
-		randomMovieProviders = []; // 👈 เพิ่มบรรทัดนี้
+		randomMovieProviders = [];
 	}
+	/* 12.กดปิดหน้าต่าง Modal ของหนังที่สุ่มได้ */
 
-	// ฟังก์ชันโหลด/สุ่มหนังประจำวัน
+	/* 13.วิ่งไปดึงข้อมูลหนังแนะนำประจำวันมาโชว์ */
 	async function loadDailyMovie() {
 		const now = new Date();
-
-		// 1. สร้างวันที่มาตรฐาน (YYYY-MM-DD) ที่เหมือนกันทุกอุปกรณ์บนโลก
 		const year = now.getFullYear();
 		const month = String(now.getMonth() + 1).padStart(2, '0');
 		const day = String(now.getDate()).padStart(2, '0');
-		const todayStr = `${year}-${month}-${day}`; // ผลลัพธ์จะได้ เช่น "2026-10-14" เสมอ
-
-		// 2. ใช้คีย์ v2 เพื่อล้างแคชเก่าที่เคยเซฟค้างไว้ในเครื่อง
+		const todayStr = `${year}-${month}-${day}`;
 		const storedDate = localStorage.getItem('dailyMovieDate_v2');
 		const storedMovie = localStorage.getItem('dailyMovieData_v2');
 
@@ -264,21 +238,16 @@
 			dailyMovie = JSON.parse(storedMovie);
 			return;
 		}
-
 		try {
-			// 3. คำนวณเลข Seed จากวัน-เดือน-ปี (ตรงกันเป๊ะทุกเครื่องแน่นอน)
 			const seed = year * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 			const page = (seed % 400) + 1;
 			const movieIndex = (seed * 7) % 20;
-
 			const endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${page}`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
 
 			if (data.results && data.results.length > 0) {
 				dailyMovie = data.results[movieIndex] || data.results[0];
-
-				// บันทึกลงแคชเวอร์ชัน v2
 				localStorage.setItem('dailyMovieDate_v2', todayStr);
 				localStorage.setItem('dailyMovieData_v2', JSON.stringify(dailyMovie));
 			}
@@ -286,96 +255,94 @@
 			console.error('Error fetching daily movie:', error);
 		}
 	}
+	/* 13.วิ่งไปดึงข้อมูลหนังแนะนำประจำวันมาโชว์ */
 
-	// 🚀 สั่งให้ฟังก์ชันทำงานอัตโนมัติตอนโหลดหน้าเว็บเสร็จ
+	/* 14.สั่งให้ฟังก์ชันทำงานอัตโนมัติตอนโหลดหน้าเว็บเสร็จ*/
 	onMount(() => {
 		loadDailyMovie();
 	});
 
-	// 🖱️ ฟังก์ชันแปลงการหมุนเมาส์ขึ้น-ลง เป็นเลื่อนซ้าย-ขวาบน Desktop
+	/* 15.สั่งให้แถวหนังเลื่อนไปซ้ายหรือขวาตามปุ่มกด */
 	function horizontalScroll(node: HTMLElement) {
 		const onWheel = (e: WheelEvent) => {
 			if (e.deltaY !== 0) {
-				e.preventDefault(); // ป้องกันไม่ให้ตัว Modal หลักเลื่อนขึ้นลง
-				node.scrollLeft += e.deltaY; // แปลงระยะหมุนเมาส์ไปเลื่อนแนวนอน
+				e.preventDefault();
+				node.scrollLeft += e.deltaY;
 			}
 		};
 
-		// ใส่ passive: false เพื่อให้สามารถ e.preventDefault() ได้ 100%
 		node.addEventListener('wheel', onWheel, { passive: false });
-
 		return {
 			destroy() {
 				node.removeEventListener('wheel', onWheel);
 			}
 		};
 	}
+	/* 15.สั่งให้แถวหนังเลื่อนไปซ้ายหรือขวาตามปุ่มกด */
 
+	/* 16.สั่งให้แถวนักแสดงเลื่อนไปซ้ายหรือขวา */
 	function scrollCast(direction: 'left' | 'right') {
 		if (castContainer) {
 			const scrollAmount = direction === 'left' ? -200 : 200;
 			castContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
 		}
 	}
+	/* 16.สั่งให้แถวนักแสดงเลื่อนไปซ้ายหรือขวา */
 
-	// 🌟 1. อัปเดตแพลตฟอร์มสตรีมมิ่ง (เพิ่ม Apple TV+)
+	/* 17.อัปเดตแพลตฟอร์มสตรีมมิ่ง */
 	const streamingPlatforms = [
-		{ id: 8, name: 'Netflix', bgColor: 'hover:bg-red-600', activeColor: 'bg-red-600' },
-		{ id: 122, name: 'Disney+', bgColor: 'hover:bg-blue-600', activeColor: 'bg-blue-600' },
-		{ id: 315, name: 'HBO GO', bgColor: 'hover:bg-purple-600', activeColor: 'bg-purple-600' },
-		{ id: 119, name: 'Prime Video', bgColor: 'hover:bg-cyan-600', activeColor: 'bg-cyan-600' },
-		{ id: 191, name: 'iQIYI', bgColor: 'hover:bg-green-500', activeColor: 'bg-green-500' },
+		{ id: 8, name: 'Netflix', bgColor: 'hover:bg-[#E50914]', activeColor: 'bg-red-600' },
+		{ id: 122, name: 'Disney+', bgColor: 'hover:bg-[#BCEFFF]', activeColor: 'bg-blue-600' },
+		{ id: 315, name: 'HBO GO', bgColor: 'hover:bg-gray-300', activeColor: 'bg-gray-600' },
+		{ id: 119, name: 'Prime Video', bgColor: 'hover:bg-[#0779FF]', activeColor: 'bg-cyan-600' },
+		{ id: 191, name: 'iQIYI', bgColor: 'hover:bg-[#00DC5A]', activeColor: 'bg-green-500' },
 		{ id: 350, name: 'Apple TV+', bgColor: 'hover:bg-gray-600', activeColor: 'bg-gray-600' }
 	];
 
-	// 🌟 2. ฟังก์ชันหลักสำหรับดึงหนังตามตัวกรองที่ผสมกัน
+	/* 18.กรองหนังแบบผสม (เลือกหมวดหมู่ + แพลตฟอร์ม หรือ Marvel พร้อมกัน) */
 	async function applyFilters(pageNumber = 1) {
-    searchQuery = '';
-    currentPage = pageNumber;
-    isLoading = true;
+		searchQuery = '';
+		currentPage = pageNumber;
+		isLoading = true;
 
-    // 🌟 เช็กสถานะ viewMode ให้ตรงกับที่พี่แซมประกาศไว้
-    if (selectedGenreId === null && selectedProviderId === null) {
-        viewMode = 'home';
-    } else if (selectedGenreId !== null) {
-        viewMode = 'genre';
-    } else if (selectedProviderId !== null) {
-        viewMode = 'provider';
-    }
+		if (selectedGenreId === null && selectedProviderId === null) {
+			viewMode = 'home';
+		} else if (selectedGenreId !== null) {
+			viewMode = 'genre';
+		} else if (selectedProviderId !== null) {
+			viewMode = 'provider';
+		}
 
-    try {
-        let endpoint = '';
+		try {
+			let endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${currentPage}`;
 
-       // ⚡ ถ้ากดปุ่ม Marvel (รหัสพิเศษ 99999) ให้ดึงหนัง Marvel ด้วย Keyword ID
-        if (selectedGenreId === 99999) {
-            endpoint = `/discover/movie?language=th-TH&with_keywords=180547&page=${currentPage}`;
-        } else {
-            // โหมดกรองภาพยนตร์ปกติ (หมวดหมู่ + แพลตฟอร์ม)
-            endpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc&page=${currentPage}`;
-            
-            if (selectedGenreId) {
-                endpoint += `&with_genres=${selectedGenreId}`;
-            }
-            if (selectedProviderId) {
-                endpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
-            }
-        }
+			// ถ้าเลือก Marvel ให้เติม Keyword
+			if (selectedGenreId === 99999) {
+				endpoint += `&with_keywords=180547`;
+			} else if (selectedGenreId) {
+				endpoint += `&with_genres=${selectedGenreId}`;
+			}
 
-        const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
-        const data = await res.json();
+			// ถ้าเลือกแพลตฟอร์มควบคู่ด้วย สามารถใส่พ่วงเข้าไปได้เลยทันที!
+			if (selectedProviderId) {
+				endpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
+			}
 
-        movies = data.results || [];
-        totalPages = Math.min(data.total_pages || 1, 500);
+			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
+			const data = await res.json();
 
-    } catch (e) {
-        console.error('Error fetching filtered movies:', e);
-        movies = [];
-    } finally {
-        isLoading = false;
-    }
-}
+			movies = data.results || [];
+			totalPages = Math.min(data.total_pages || 1, 500);
+		} catch (e) {
+			console.error('Error fetching filtered movies:', e);
+			movies = [];
+		} finally {
+			isLoading = false;
+		}
+	}
+	/* 18.กรองหนังแบบผสม (เลือกหมวดหมู่ + แพลตฟอร์ม หรือ Marvel พร้อมกัน) */
 
-	// 🌟 3. ฟังก์ชันเปิด/ปิด ปุ่มหมวดหมู่
+	/* 19.กดเลือกหรือยกเลิกหมวดหมู่หนัง */
 	function toggleGenre(genreId: number) {
 		if (selectedGenreId === genreId) {
 			selectedGenreId = null; // ถ้าย้ำปุ่มเดิม = ปิดตัวกรอง
@@ -384,45 +351,61 @@
 		}
 		applyFilters(1);
 	}
+	/* 19.กดเลือกหรือยกเลิกหมวดหมู่หนัง */
 
-	// 🌟 4. ฟังก์ชันเปิด/ปิด ปุ่มแพลตฟอร์มสตรีมมิ่ง
+	/* 20.กดเลือกหรือยกเลิกแพลตฟอร์มสตรีมมิ่ง */
 	function togglePlatform(providerId: number | null) {
 		if (providerId === null || selectedProviderId === providerId) {
-			selectedProviderId = null; // เคลียร์ตัวกรองสตรีมมิ่ง
+			selectedProviderId = null;
 		} else {
 			selectedProviderId = providerId;
 		}
 		applyFilters(1);
 	}
+	/* 20.กดเลือกหรือยกเลิกแพลตฟอร์มสตรีมมิ่ง */
 
-	// 🌟 5. อัปเกรดฟังก์ชันสุ่มหนัง ให้สุ่มตาม "ตัวกรองผสม" ที่ผู้ใช้อยู่
+	/* 21.สุ่มเลือกหนังเด็ดๆ ขึ้นมา 1 เรื่อง */
 	async function pickRandomMovie() {
-		isModalOpen = true;
-		randomMovie = null;
-		randomTrailerKey = null;
 		isPlayingRandomMovieTrailer = false;
+		randomTrailerKey = null;
 		randomMovieProviders = [];
 
-		try {
-			// 5.1 สร้าง URL ตามหมวดหมู่และแพลตฟอร์มที่เลือกไว้
-			let baseEndpoint = `/discover/movie?language=th-TH`;
-			if (selectedGenreId) baseEndpoint += `&with_genres=${selectedGenreId}`;
-			if (selectedProviderId)
-				baseEndpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
+		isShaking = false;
+		await tick();
+		isShaking = true;
 
-			// 5.2 เช็กก่อนว่าตัวกรองที่เลือกมันมีหนังให้สุ่มไหม
+		setTimeout(() => {
+			isShaking = false;
+		}, 400);
+
+		try {
+			let baseEndpoint = `/discover/movie?language=th-TH`;
+
+			// เช็กว่าถ้าเลือกหมวดพิเศษ Marvel (99999) ให้ใช้ Keyword แทน Genre ปกติ
+			if (selectedGenreId === 99999) {
+				baseEndpoint += `&with_keywords=180547`;
+			} else if (selectedGenreId) {
+				baseEndpoint += `&with_genres=${selectedGenreId}`;
+			}
+
+			// รองรับการเลือกแพลตฟอร์มควบคู่กันไปได้ปกติ
+			if (selectedProviderId) {
+				baseEndpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
+			}
+
 			const res = await fetch(
 				`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + '&page=1')}`
 			);
 			const initialData = await res.json();
 
 			if (!initialData.results || initialData.results.length === 0) {
-				alert('😅 ไม่พบหนังที่ตรงกับหมวดหมู่และสตรีมมิ่งนี้รวมกันครับ ลองเปลี่ยนตัวกรองดูนะ');
+				alert(
+					'ขอโทษครับเฮีย ขอโทษครับซ้อ ไม่พบหนังที่ตรงกับหมวดหมู่และสตรีมมิ่งนี้รวมกัน ลองเปลี่ยนตัวกรองใหม่เด้อ'
+				);
 				isModalOpen = false;
 				return;
 			}
 
-			// 5.3 สุ่มหน้า และ สุ่มลำดับหนัง
 			const maxPage = Math.min(initialData.total_pages, 500);
 			const randomPage = Math.floor(Math.random() * maxPage) + 1;
 
@@ -430,18 +413,16 @@
 				`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + `&page=${randomPage}`)}`
 			);
 			const pageData = await pageRes.json();
-
 			const randomIndex = Math.floor(Math.random() * pageData.results.length);
 			const pickedMovie = pageData.results[randomIndex];
 
-			// 5.4 ดึงข้อมูลเชิงลึกมาใส่ Modal (วิดีโอ, แพลตฟอร์ม)
 			const detailEndpoint = `/movie/${pickedMovie.id}?language=th-TH&append_to_response=videos,watch/providers&include_video_language=th,en,null`;
 			const detailRes = await fetch(`/api/movies?endpoint=${encodeURIComponent(detailEndpoint)}`);
 			const detailData = await detailRes.json();
 
 			randomMovie = detailData;
+			isModalOpen = true;
 
-			// จัดการคลิปวิดีโอ
 			const videos = detailData.videos?.results || [];
 			let trailer =
 				videos.find(
@@ -450,16 +431,26 @@
 				videos.find((v: any) => v.site === 'YouTube' && v.type === 'Trailer') ||
 				videos.find((v: any) => v.site === 'YouTube');
 			if (trailer) randomTrailerKey = trailer.key;
-
-			// จัดการแสดงแพลตฟอร์มใน Modal
 			if (detailData['watch/providers']?.results?.TH?.flatrate) {
 				randomMovieProviders = detailData['watch/providers'].results.TH.flatrate;
 			}
 		} catch (e) {
 			console.error('Error fetching random movie:', e);
-			isModalOpen = false;
 		}
 	}
+	/* 21.สุ่มเลือกหนังเด็ดๆ ขึ้นมา 1 เรื่อง */
+
+	/* 22.ล็อค modal ไม่ให้เลื่อนฉากหลังได้ */
+	$effect(() => {
+		if (typeof document !== 'undefined') {
+			if (isAnyModalOpen) {
+				document.body.classList.add('overflow-hidden');
+			} else {
+				document.body.classList.remove('overflow-hidden');
+			}
+		}
+	});
+	/* 22.ล็อค modal ไม่ให้เลื่อนฉากหลังได้ */
 </script>
 
 <svelte:head>
@@ -468,20 +459,20 @@
 
 <main class="min-h-screen bg-black p-8 text-white">
 	<div class="mx-auto max-w-6xl">
-		<!-- ส่วนหัวเว็บ -->
 		<div class="mb-8 text-center">
 			<h1 class="mt-6 mb-2 text-5xl font-bold text-red-500">FindAFlick</h1>
 			<p class="mb-6 text-xs whitespace-nowrap text-gray-300 sm:text-base md:text-lg">
 				อยากดูหนังแต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้
 			</p>
 
-			<!-- 🎲 ปุ่มสุ่มหนังไฮไลท์ -->
+			<!-- ปุ่มสุ่มหนังไฮไลท์ -->
 			<button
 				onclick={pickRandomMovie}
 				disabled={movies.length === 0 || isLoading}
-				class="cursor-pointer rounded-full bg-gradient-to-r from-red-600 to-orange-600 px-8 py-4 text-lg font-bold text-white shadow-lg shadow-red-600/40 transition-all hover:scale-105 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
-			>
-				ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
+				class="cursor-pointer rounded-full bg-gradient-to-r from-red-600 to-orange-600 px-8 py-4
+				text-lg font-bold text-white shadow-lg shadow-red-600/40 transition-all hover:scale-105
+				active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+				>ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
 			</button>
 		</div>
 
@@ -493,14 +484,19 @@
 					bind:value={searchQuery}
 					onkeydown={(e) => e.key === 'Enter' && searchMovies()}
 					placeholder="อยากดูเรื่องไรไหนบอกซิ.."
-					class="w-full rounded-full border border-white/10 bg-white/5 px-6 py-4 pr-14 text-white placeholder-gray-400 backdrop-blur-md transition-all focus:border-red-500/50 focus:bg-white/10 focus:ring-1 focus:ring-red-500/50 focus:outline-none"
+					class="w-full rounded-full border border-white/10 bg-white/5 px-6 py-4 pr-14
+					text-white placeholder-gray-400 backdrop-blur-md transition-all focus:border-red-500/50
+					focus:bg-white/10 focus:ring-1 focus:ring-red-500/50 focus:outline-none"
 				/>
+
 				<!-- ปุ่มกดแว่นขยาย -->
 				<!-- svelte-ignore a11y_consider_explicit_label -->
 				<button
 					type="button"
 					onclick={() => searchMovies()}
-					class="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-red-500/20 text-red-400 transition-all hover:bg-red-500 hover:text-white"
+					class="absolute top-1/2 right-3 flex h-10 w-10 -translate-y-1/2 cursor-pointer
+					items-center justify-center rounded-full bg-red-500/20 text-red-400 transition-all
+					hover:bg-red-500 hover:text-white"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
@@ -520,11 +516,10 @@
 			</div>
 		</div>
 
-		<!-- 🎛️ แผงควบคุมตัวกรอง (Glassmorphism Filter Panel) -->
+		<!-- แผงควบคุมตัวกรอง -->
 		<div>
-			<!-- 📺 1. กลุ่มแพลตฟอร์มสตรีมมิ่ง -->
+			<!-- กลุ่มแพลตฟอร์มสตรีมมิ่ง -->
 			<div class="flex flex-col gap-4">
-				<!-- หัวข้อ & ปุ่มล้างตัวกรอง -->
 				<div class="flex items-center justify-between md:justify-center md:gap-6">
 					<h3 class="text-lg font-bold tracking-wide text-white md:text-xl">แพลตฟอร์มสตรีมมิ่ง</h3>
 
@@ -535,7 +530,11 @@
 								togglePlatform(null);
 								if (selectedGenreId) toggleGenre(selectedGenreId);
 							}}
-							class="flex cursor-pointer items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-200 shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all duration-300 hover:border-white/40 hover:bg-white/20 hover:text-white hover:shadow-[0_4px_16px_rgba(255,255,255,0.1)] active:scale-95"
+							class="flex cursor-pointer items-center gap-1.5 rounded-full border
+							border-white/20 bg-white/10 px-3 py-1.5 text-xs font-medium text-gray-200
+							shadow-[0_4px_12px_rgba(0,0,0,0.1)] backdrop-blur-md transition-all duration-300
+							hover:border-white/40 hover:bg-white/20 hover:text-white
+							hover:shadow-[0_4px_16px_rgba(255,255,255,0.1)] active:scale-95"
 						>
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
@@ -544,7 +543,8 @@
 								class="h-3.5 w-3.5"
 							>
 								<path
-									d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
+									d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 
+									11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z"
 								/>
 							</svg>
 							ล้างตัวกรอง
@@ -584,13 +584,12 @@
 				</div>
 			</div>
 
-			<!-- 〰️ เส้นแบ่งสัดส่วน (Divider) 〰️ -->
+			<!-- เส้นแบ่งสัดส่วน (Divider) -->
 			<div class="mx-auto w-3/4 border-t border-white/10 md:w-1/2"></div>
 
-			<!-- 🏷️ 2. กลุ่มหมวดหมู่ภาพยนตร์ -->
+			<!-- กลุ่มหมวดหมู่ภาพยนตร์ -->
 			<div class="mt-4 flex flex-col gap-4 md:text-center">
 				<h3 class="text-lg font-bold tracking-wide text-white md:text-xl">หมวดหมู่ภาพยนตร์</h3>
-
 				<!-- แถบปุ่มหมวดหมู่ -->
 				<div
 					class="flex scrollbar-none gap-2.5 overflow-x-auto pb-3 md:flex-wrap md:justify-center md:overflow-visible [&::-webkit-scrollbar]:hidden"
@@ -612,8 +611,8 @@
 						onclick={() => toggleGenre(99999)}
 						class="flex-shrink-0 cursor-pointer rounded-2xl border px-4 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 active:scale-95 {selectedGenreId ===
 						99999
-							? 'border-amber-400 bg-amber-600/90 text-white shadow-[0_0_20px_rgba(245,158,11,0.4)]'
-							: 'border-white/10 bg-white/5 text-amber-300 hover:border-amber-400/40 hover:bg-amber-500/10'}"
+							? 'border-rose-400 bg-rose-600/90 text-white shadow-[0_0_20px_rgba(245,158,11,0.4)]'
+							: 'border-white/10 bg-white/5 text-red-500 hover:border-rose-400/40 hover:bg-rose-500/10'}"
 					>
 						Marvel Cinematic Universe
 					</button>
@@ -621,7 +620,7 @@
 			</div>
 		</div>
 
-		<!-- 🌟 แบนเนอร์หนังแนะนำประจำวัน (แสดงเฉพาะหน้า home) -->
+		<!-- แบนเนอร์หนังแนะนำประจำวัน (แสดงเฉพาะหน้า home) -->
 		{#if viewMode === 'home' && dailyMovie}
 			<div class="my-8 w-full px-4">
 				<h2 class="mb-4 flex items-center gap-2 text-2xl font-bold text-white">วันนี้ดูอะไรดี?</h2>
@@ -629,16 +628,18 @@
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_static_element_interactions -->
 				<div
-					class="group relative cursor-pointer overflow-hidden rounded-3xl border border-white/10 bg-black/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all hover:border-white/20"
+					class="group relative cursor-pointer overflow-hidden rounded-3xl border
+				border-white/10 bg-black/50 shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-all hover:border-white/20"
 					onclick={() => openMovieDetails(dailyMovie.id)}
 				>
-					<!-- 🎨 ภาพพื้นหลัง (Backdrop) เบลอและไล่สี -->
+					<!-- ภาพพื้นหลัง (Backdrop) เบลอและไล่สี -->
 					<div class="absolute inset-0 z-0">
 						<img
 							src={`https://image.tmdb.org/t/p/w1280${dailyMovie.backdrop_path || dailyMovie.poster_path}`}
 							alt={dailyMovie.title}
 							class="h-full w-full object-cover opacity-40 transition-transform duration-700 group-hover:scale-105"
 						/>
+
 						<div
 							class="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"
 						></div>
@@ -647,7 +648,7 @@
 						></div>
 					</div>
 
-					<!-- 🎬 เนื้อหาการ์ด -->
+					<!-- เนื้อหาการ์ด -->
 					<div class="relative z-10 flex flex-col gap-6 p-6 md:flex-row md:items-center md:p-8">
 						<!-- โปสเตอร์ (ซ่อนในมือถือ โชว์ในจอใหญ่) -->
 						<div
@@ -702,96 +703,103 @@
 			</div>
 		{/if}
 
+		<!--Top 10 หนังแบบเรียลไทม์-->
 		{#if viewMode == 'home'}
-		<div class="my-10 w-full px-4">
-			<h2 class="mb-4 text-2xl font-bold text-white">Top 10 เขาดูอะไรกันอยู่ตอนนี้</h2>
-
-			<!-- ตัวครอบหลักแบบ relative เพื่อให้ปุ่มลูกศรยึดตำแหน่งอยู่ขอบซ้าย/ขวาได้ -->
-			<div class="group relative">
-				<!-- ปุ่มเลื่อนซ้าย (แสดงเมื่อเอาเมาส์ช็อต หรือกดเลื่อน) -->
-				<!-- svelte-ignore a11y_consider_explicit_label -->
-				<button
-					type="button"
-					onclick={() => {
-						const container = document.getElementById('top-movies-container');
-						if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
-					}}
-					class="absolute top-1/2 left-0 z-20 hidden h-24 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-r-lg bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-black/80 md:flex"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="2.5"
-						stroke="currentColor"
-						class="size-6"
+			<div class="my-10 w-full px-4">
+				<h2 class="mb-4 text-2xl font-bold text-white">Top 10 เขาดูอะไรกันอยู่ตอนนี้</h2>
+				<!-- ตัวครอบหลักแบบ relative เพื่อให้ปุ่มลูกศรยึดตำแหน่งอยู่ขอบซ้าย/ขวาได้ -->
+				<div class="group relative">
+					<!-- ปุ่มเลื่อนซ้าย (แสดงเมื่อเอาเมาส์ช็อต หรือกดเลื่อน) -->
+					<!-- svelte-ignore a11y_consider_explicit_label -->
+					<button
+						type="button"
+						onclick={() => {
+							const container = document.getElementById('top-movies-container');
+							if (container) container.scrollBy({ left: -300, behavior: 'smooth' });
+						}}
+						class="absolute top-1/2 left-0 z-20 hidden h-24 w-10 -translate-y-1/2 cursor-pointer
+						items-center justify-center rounded-r-lg bg-black/60 text-white opacity-0 transition-opacity
+						group-hover:opacity-100 hover:bg-black/80 md:flex"
 					>
-						<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-					</svg>
-				</button>
-
-				<!-- แถวเลื่อนดูหนัง (กำหนด id ไว้สำหรับสั่งเลื่อน) -->
-				<div
-					id="top-movies-container"
-					class="flex [scrollbar-width:none] scrollbar-none gap-4 overflow-x-auto scroll-smooth pt-4 pb-4 pl-6 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-				>
-					{#each topMovies as movie, index}
-						<!-- ปรับขนาดการ์ดให้พอดี ไม่ใหญ่เกินไป (เช่น min-w-[130px] และ sm:min-w-[150px]) -->
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="group/item relative max-w-[130px] min-w-[130px] shrink-0 cursor-pointer sm:max-w-[150px] sm:min-w-[150px]"
-							onclick={() => openMovieDetails(movie.id)}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2.5"
+							stroke="currentColor"
+							class="size-6"
 						>
-							<!-- ตัวเลขอันดับ ปรับขนาดลงมาให้บาลานซ์กับขนาดการ์ดใหม่ -->
-							<span
-								class="pointer-events-none absolute -bottom-3 -left-4 z-10 bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-7xl font-black text-transparent italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)] transition-transform group-hover/item:scale-105 sm:text-8xl"
-							>
-								{index + 1}
-							</span>
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M15.75 19.5 8.25 12l7.5-7.5"
+							/>
+						</svg>
+					</button>
 
-							<!-- โปสเตอร์หนัง -->
-							<div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-white/5 shadow-lg">
-								{#if movie.poster_path}
-									<img
-										src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-										alt={movie.title}
-										class="h-full w-full object-cover transition-transform duration-300 group-hover/item:scale-110"
-									/>
-								{:else}
-									<div class="flex h-full items-center justify-center text-xs text-gray-500">
-										ไม่มีรูปภาพ
-									</div>
-								{/if}
-							</div>
-						</div>
-					{/each}
-				</div>
-
-				<!-- ปุ่มเลื่อนขวา (สไตล์แคปซูลมนๆ แบบในรูปตัวอย่าง) -->
-				<!-- svelte-ignore a11y_consider_explicit_label -->
-				<button
-					type="button"
-					onclick={() => {
-						const container = document.getElementById('top-movies-container');
-						if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
-					}}
-					class="absolute top-1/2 right-0 z-20 flex h-24 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-lg bg-black/60 text-white transition-opacity hover:bg-black/80 md:opacity-0 md:group-hover:opacity-100"
-				>
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						stroke-width="2.5"
-						stroke="currentColor"
-						class="size-6"
+					<!-- แถวเลื่อนดูหนัง (กำหนด id ไว้สำหรับสั่งเลื่อน) -->
+					<div
+						id="top-movies-container"
+						class="flex [scrollbar-width:none] scrollbar-none gap-4 overflow-x-auto scroll-smooth pt-4 pb-4 pl-6 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
 					>
-						<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
-					</svg>
-				</button>
+						{#each topMovies as movie, index}
+							<!-- svelte-ignore a11y_click_events_have_key_events -->
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<div
+								class="group/item relative max-w-[130px] min-w-[130px] shrink-0 cursor-pointer sm:max-w-[150px] sm:min-w-[150px]"
+								onclick={() => openMovieDetails(movie.id)}
+							>
+								<span
+									class="pointer-events-none absolute -bottom-3 -left-4 z-10 bg-gradient-to-r from-red-600 to-orange-600
+								bg-clip-text text-7xl font-black text-transparent italic drop-shadow-[0_4px_4px_rgba(0,0,0,0.8)]
+								transition-transform group-hover/item:scale-105 sm:text-8xl"
+								>
+									{index + 1}
+								</span>
+
+								<!-- โปสเตอร์หนัง -->
+								<div class="relative aspect-[2/3] overflow-hidden rounded-lg bg-white/5 shadow-lg">
+									{#if movie.poster_path}
+										<img
+											src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+											alt={movie.title}
+											class="h-full w-full object-cover transition-transform duration-300 group-hover/item:scale-110"
+										/>
+									{:else}
+										<div class="flex h-full items-center justify-center text-xs text-gray-500">
+											ไม่มีรูปภาพ
+										</div>
+									{/if}
+								</div>
+							</div>
+						{/each}
+					</div>
+
+					<!-- ปุ่มเลื่อนขวา -->
+					<!-- svelte-ignore a11y_consider_explicit_label -->
+					<button
+						type="button"
+						onclick={() => {
+							const container = document.getElementById('top-movies-container');
+							if (container) container.scrollBy({ left: 300, behavior: 'smooth' });
+						}}
+						class="absolute top-1/2 right-0 z-20 flex h-24 w-10 -translate-y-1/2 cursor-pointer items-center justify-center
+						rounded-l-lg bg-black/60 text-white transition-opacity hover:bg-black/80 md:opacity-0 md:group-hover:opacity-100"
+					>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke-width="2.5"
+							stroke="currentColor"
+							class="size-6"
+						>
+							<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+						</svg>
+					</button>
+				</div>
 			</div>
-		</div>
-	{/if}
+		{/if}
 
 		<!-- แสดงรายชื่อหนัง -->
 		<div>
@@ -805,7 +813,7 @@
 					class="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-sm text-gray-300 shadow-sm backdrop-blur-md"
 				>
 					{#if isLoading}
-						<span class="animate-pulse">กำลังโหลดข้อมูล...</span>
+						<span class="animate-pulse">กำลังโหลดข้อมูลครับเฮีย...</span>
 					{:else}
 						พบภาพยนตร์ <span class="font-bold text-white">{movies.length}</span> เรื่อง
 					{/if}
@@ -825,7 +833,9 @@
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<div
 							onclick={() => openMovieDetails(movie.id)}
-							class="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:border-red-400/50 hover:bg-white/10 hover:shadow-[0_0_25px_rgba(248,113,113,0.15)]"
+							class="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10
+							bg-white/5 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2
+							hover:border-red-400/50 hover:bg-white/10 hover:shadow-[0_0_25px_rgba(248,113,113,0.15)]"
 						>
 							<div class="relative aspect-[2/3] w-full overflow-hidden bg-black/40">
 								{#if movie.poster_path}
@@ -860,23 +870,26 @@
 									{movie.title}
 								</h3>
 								<p class="line-clamp-2 text-xs leading-relaxed text-gray-400">
-									{movie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
+									{movie.overview || 'ยังไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
 								</p>
 							</div>
 						</div>
 					{/each}
 				</div>
+
 				<div class="my-8 flex flex-wrap items-center justify-center gap-3 px-4 md:my-10 md:gap-4">
 					<!-- ปุ่มหน้าก่อนหน้า -->
 					<button
 						onclick={() => changePage(currentPage - 1)}
 						disabled={currentPage === 1 || isLoading}
-						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10
+						bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all
+						hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
 					>
 						← ก่อนหน้า
 					</button>
 
-					<!-- 🌟 ช่องกรอกเลขหน้าเพื่อกระโดดข้าม (ดันขึ้นบนสุดในมือถือ) -->
+					<!-- ช่องกรอกเลขหน้าเพื่อกระโดดข้าม -->
 					<form
 						onsubmit={(e) => {
 							e.preventDefault();
@@ -890,7 +903,8 @@
 									currentPage.toString();
 							}
 						}}
-						class="order-first mb-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mb-0 md:w-auto md:py-1.5"
+						class="order-first mb-1 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10
+						bg-white/5 px-3 py-2 backdrop-blur-md transition-all hover:border-white/20 md:order-none md:mb-0 md:w-auto md:py-1.5"
 					>
 						<span class="text-sm font-medium text-gray-300">หน้า</span>
 						<input
@@ -900,7 +914,9 @@
 							max={totalPages}
 							value={currentPage}
 							title="พิมพ์เลขหน้าแล้วกด Enter"
-							class="w-16 rounded-md border border-white/20 bg-black/40 py-1 text-center text-sm font-bold text-white transition-all outline-none focus:border-red-500 focus:bg-black focus:ring-1 focus:ring-red-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+							class="w-16 rounded-md border border-white/20 bg-black/40 py-1 text-center text-sm
+							font-bold text-white transition-all outline-none focus:border-red-500 focus:bg-black focus:ring-1
+							focus:ring-red-500 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
 						/>
 						<span class="text-sm font-medium text-gray-300">/ {totalPages}</span>
 
@@ -916,7 +932,9 @@
 					<button
 						onclick={() => changePage(currentPage + 1)}
 						disabled={currentPage >= totalPages || isLoading}
-						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
+						class="flex flex-1 cursor-pointer items-center justify-center rounded-xl border border-white/10
+						bg-white/5 px-4 py-2.5 text-sm font-semibold text-white shadow-lg backdrop-blur-md transition-all
+						hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30 md:flex-none md:px-5"
 					>
 						ถัดไป →
 					</button>
@@ -932,7 +950,7 @@
 	</div>
 </main>
 
-<!-- 🎬 Modal แสดงผลลัพธ์เมื่อกดสุ่มหนัง -->
+<!-- Modal แสดงผลลัพธ์เมื่อกดสุ่มหนัง -->
 {#if isModalOpen && randomMovie}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -942,17 +960,20 @@
 			if (e.target === e.currentTarget) closeRandomModal();
 		}}
 	>
-		<!-- ตัวกล่อง Modal แบบ Glassmorphism -->
+		<!-- ตัวกล่อง Modal -->
 		<div
-			class="animate-in fade-in zoom-in relative w-full max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 {isShaking
-				? 'animate-shake'
-				: ''}"
+			class="animate-in fade-in zoom-in relative w-full max-w-xl
+			overflow-hidden rounded-3xl border border-white/10 bg-white/5
+			shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200
+			{isShaking ? 'animate-shake' : ''}"
 		>
-			<!-- ❌ ปุ่มปิด X มุมขวาบน (มือถือ) -->
+			<!-- ปุ่มปิด X มุมขวาบน (เฉพาะมือถือ) -->
 			<button
 				type="button"
 				onclick={closeRandomModal}
-				class="absolute top-3 right-3 z-50 flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-all hover:bg-black/70 active:scale-95 md:hidden"
+				class="absolute top-3 right-3 z-50 flex h-10 w-10 cursor-pointer
+				items-center justify-center rounded-full bg-black/50 text-white
+				backdrop-blur-sm transition-all hover:bg-black/70 active:scale-95 md:hidden"
 				aria-label="Close modal"
 			>
 				<svg
@@ -968,7 +989,7 @@
 			</button>
 
 			<div class="flex flex-col p-6 md:p-8">
-				<!-- 🎬 เล่นตัวอย่างหนัง YouTube (พร้อมมาสก์ตัดขอบโค้งเนียนสนิท ไม่แลบเป็นสี่เหลี่ยม) -->
+				<!-- เล่นตัวอย่างหนัง YouTube -->
 				{#if isPlayingRandomMovieTrailer && randomTrailerKey}
 					<div
 						class="relative isolate mb-6 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
@@ -980,11 +1001,14 @@
 							class="h-full w-full rounded-2xl border-0"
 							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 							allowfullscreen
-						></iframe>
+						>
+						</iframe>
+
 						<button
 							type="button"
 							onclick={() => (isPlayingRandomMovieTrailer = false)}
-							class="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-black/70 px-3 py-1 text-xs font-bold text-white backdrop-blur-sm hover:bg-black"
+							class="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-black/70 px-3 py-1
+							text-xs font-bold text-white backdrop-blur-sm hover:bg-black"
 						>
 							✕ ปิดตัวอย่างหนัง
 						</button>
@@ -1053,26 +1077,32 @@
 							<button
 								type="button"
 								onclick={() => (isPlayingRandomMovieTrailer = true)}
-								class="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-600 active:scale-95"
+								class="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl
+								bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all
+								hover:bg-red-600 active:scale-95"
 							>
 								<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
 							</button>
 						{/if}
 
-						<!-- กลุ่มปุ่มกดแบบ Glassmorphism (สุ่มใหม่ / ปิด) -->
+						<!-- ปุ่มสุ่มใหม่ -->
 						<div class="mt-2 flex gap-3">
 							<button
 								onclick={() => {
 									isPlayingRandomMovieTrailer = false;
 									pickRandomMovie();
 								}}
-								class="flex-1 cursor-pointer rounded-xl border border-red-500/50 bg-red-500/20 py-3 text-sm font-bold text-red-100 shadow-lg backdrop-blur-md transition-all hover:bg-red-500/40 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95"
+								class="flex-1 cursor-pointer rounded-xl border border-red-500/50
+								bg-red-500/20 py-3 text-sm font-bold text-red-100 shadow-lg backdrop-blur-md
+								transition-all hover:bg-red-500/40 hover:shadow-[0_0_15px_rgba(239,68,68,0.3)] active:scale-95
+								{isShaking ? 'animate-shake' : ''}"
 							>
-								🎲 ไม่ถูกใจหรอ? สุ่มอีกรอบสิ
+								ไม่ถูกใจหรอ? สุ่มอีกรอบสิ
 							</button>
 							<button
 								onclick={closeRandomModal}
-								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
+								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg
+								backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
 							>
 								ปิด
 							</button>
@@ -1094,11 +1124,11 @@
 			if (e.target === e.currentTarget) closeModal();
 		}}
 	>
-		<!-- 🌟 ตัวกล่อง Modal (ตั้งค่าเป็น Flex Column ล็อกความสูงไม่เกิน 85vh) -->
 		<div
-			class="animate-in fade-in zoom-in relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl"
+			class="animate-in fade-in zoom-in relative flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden
+		rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-3xl"
 		>
-			<!-- ❌ ปุ่มปิด X มุมขวาบน (แสดงเฉพาะบนมือถือ) -->
+			<!-- ปุ่มปิด X มุมขวาบน (แสดงเฉพาะบนมือถือ) -->
 			<button
 				type="button"
 				onclick={closeModal}
@@ -1124,7 +1154,7 @@
 					<p>กำลังโหลดใจเย็น ๆ</p>
 				</div>
 			{:else if selectedMovieDetails}
-				<!-- 1. 📜 ส่วนเนื้อหาข้อมูลหนัง (สโครลเลื่อนดูได้เฉพาะส่วนนี้เมื่อเนื้อหายาว) -->
+				<!-- ส่วนเนื้อหาข้อมูลหนัง (เลื่อนดูได้เฉพาะส่วนนี้เมื่อเนื้อหายาว) -->
 				<div
 					class="flex flex-1 [scrollbar-width:none] flex-col overflow-y-auto [-ms-overflow-style:none] md:flex-row [&::-webkit-scrollbar]:hidden"
 				>
@@ -1153,9 +1183,9 @@
 									? selectedMovieDetails.vote_average.toFixed(1)
 									: 'N/A'}
 							</span>
-							<span class="text-sm text-gray-400"
-								>{selectedMovieDetails.release_date?.split('-')[0] || 'N/A'}</span
-							>
+							<span class="text-sm text-gray-400">
+								{selectedMovieDetails.release_date?.split('-')[0] || 'N/A'}
+							</span>
 						</div>
 
 						<h2 class="mb-4 text-2xl font-bold text-white drop-shadow-md md:text-3xl">
@@ -1174,7 +1204,7 @@
 							{/each}
 						</div>
 
-						<!-- 🎬 ตัวอย่างหนัง YouTube -->
+						<!-- ตัวอย่างหนัง YouTube -->
 						{#if isPlayingTrailer && trailerKey}
 							<div
 								class="relative isolate mb-4 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
@@ -1186,7 +1216,8 @@
 									class="h-full w-full rounded-2xl border-0"
 									allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 									allowfullscreen
-								></iframe>
+								>
+								</iframe>
 
 								<button
 									type="button"
@@ -1239,18 +1270,19 @@
 						</div>
 
 						<!-- นักแสดงนำ -->
-						<!-- 🎭 ส่วนแสดงรายชื่อนักแสดงนำ -->
 						{#if selectedMovieDetails?.credits?.cast && selectedMovieDetails.credits.cast.length > 0}
 							<div class="mt-2 border-t border-white/10 pt-4">
 								<div class="mb-3 flex items-center justify-between">
 									<h4 class="text-sm font-semibold text-gray-300">นักแสดงนำ</h4>
 
-									<!-- 🎯 ปุ่มลูกศรเลื่อนซ้าย-ขวา (แสดงเฉพาะ Desktop) -->
+									<!-- ปุ่มลูกศรเลื่อนซ้าย-ขวา (แสดงเฉพาะ Desktop) -->
 									<div class="hidden items-center gap-1 md:flex">
 										<button
 											type="button"
 											onclick={() => scrollCast('left')}
-											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full
+											border border-white/10 bg-white/5 text-xs text-gray-300 transition-all
+											hover:bg-white/20 hover:text-white active:scale-95"
 											title="เลื่อนซ้าย"
 										>
 											◀
@@ -1258,7 +1290,9 @@
 										<button
 											type="button"
 											onclick={() => scrollCast('right')}
-											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full border border-white/10 bg-white/5 text-xs text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+											class="flex h-7 w-7 cursor-pointer items-center justify-center rounded-full
+											border border-white/10 bg-white/5 text-xs text-gray-300 transition-all
+											hover:bg-white/20 hover:text-white active:scale-95"
 											title="เลื่อนขวา"
 										>
 											▶
@@ -1266,7 +1300,7 @@
 									</div>
 								</div>
 
-								<!-- 🌟 ใส่ bind:this และ use:horizontalScroll เพื่อให้หมุนลูกกลิ้งเมาส์เลื่อนข้างได้ -->
+								<!-- ใส่ bind:this และ use:horizontalScroll เพื่อให้หมุนลูกกลิ้งเมาส์เลื่อนข้างได้ -->
 								<div
 									bind:this={castContainer}
 									use:horizontalScroll
@@ -1314,7 +1348,7 @@
 					</div>
 				</div>
 
-				<!-- 2. 📌 ส่วน Footer ล็อกปุ่มปิดให้อยู่ด้านล่างสุดตลอดเวลา (Pinned Footer) -->
+				<!-- ส่วน Footer ล็อกปุ่มปิดให้อยู่ด้านล่างสุดตลอดเวลา (Pinned Footer) -->
 				<div class="flex-shrink-0 border-t border-white/10 bg-black/40 p-4 backdrop-blur-md md:p-5">
 					<button
 						type="button"
