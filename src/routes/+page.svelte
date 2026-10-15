@@ -1423,6 +1423,10 @@
 					>แบบแยกเป็นหมวดหมู่ เพื่อการตัดสินใจที่ง่ายขึ้นมั้ง (อันนี้มั่ว)
 				</p>
 
+				<h2 class="mb-2 text-md font-bold text-red-500 drop-shadow-md sm:text-2xl">
+					*** ไม่ใช่เว็บดูหนังเถื่อนโว้ยยย ***
+				</h2>
+
 				<button
 					type="button"
 					onclick={closeWelcomeModal}
