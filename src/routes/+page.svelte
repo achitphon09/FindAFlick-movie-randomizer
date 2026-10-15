@@ -31,6 +31,7 @@
 	let castContainer = $state<HTMLElement | null>(null); // กล่องรายชื่อนักแสดง
 	let mediaType = $state<'movie' | 'tv'>('movie'); // โหมดปัจจุบัน (หนัง หรือ ซีรีส์)
 	let isAnyModalOpen = $derived(isModalOpen || isDetailModalOpen); // เช็กให้แน่ใจว่ามี modal เปิดอยู่ไหม
+	let showWelcomeModal = $state(false); // สถานะเปิด/ปิด ป๊อปอัพต้อนรับตอนเข้าเว็บครั้งแรก (ค่าเริ่มต้นเป็น false ไว้ก่อน)
 
 	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -453,6 +454,25 @@
 		}
 	});
 	/* 22.ล็อค modal ไม่ให้เลื่อนฉากหลังได้ */
+
+	/* 23.ป๊อบอัพเข้าเว็บครั้งแรก */
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const hasVisited = localStorage.getItem('has_seen_welcome');
+			if (!hasVisited) {
+				showWelcomeModal = true; // ถ้ายังไม่เคยเข้า ให้เปิดป๊อปอัพ
+			}
+		}
+	});
+
+	// ฟังก์ชันเมื่อผู้ใช้กดปุ่มตกลง
+	function closeWelcomeModal() {
+		showWelcomeModal = false;
+		if (typeof window !== 'undefined') {
+			localStorage.setItem('has_seen_welcome', 'true'); // บันทึกว่าดูแล้ว จะได้ไม่เด้งอีก
+		}
+	}
+	/* 23.ป๊อบอัพเข้าเว็บครั้งแรก */
 </script>
 
 <svelte:head>
@@ -1361,6 +1381,47 @@
 					</button>
 				</div>
 			{/if}
+		</div>
+	</div>
+{/if}
+
+{#if showWelcomeModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-md transition-all duration-300">
+		<div
+			class="animate-in fade-in zoom-in relative w-full max-w-sm overflow-hidden
+            rounded-3xl border border-white/20 bg-white/10 p-5
+            text-center shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200 sm:max-w-md sm:p-8">
+			<div class="pointer-events-none absolute -top-24 -left-24 h-48 w-48 rounded-full bg-red-500/20 blur-3xl">
+			</div>
+
+			<div class="relative z-10">
+				<div class="mb-1 text-3xl font-extrabold tracking-wider text-[#E50914] drop-shadow-[0_2px_10px_rgba(229,9,20,0.4)] sm:text-4xl">
+					FindAFlick
+				</div>
+				<div class="mb-3 text-[11px] font-medium tracking-widest text-gray-400 uppercase sm:text-xs">
+					by Sammy
+				</div>
+
+				<h2 class="mb-2 text-lg font-bold text-white drop-shadow-md sm:text-2xl">
+					สวัสดีครับอาเฮีย อาซ้อ อาซิ้ม อาหมวย
+				</h2>
+
+				<p class="mb-5 text-xs leading-relaxed text-gray-300 sm:mb-6 sm:text-sm">
+					เว็บไซต์นี้สร้างขึ้นมาเพื่อแก้ pain point
+					ของคนที่อยากดูหนังแต่ไม่รู้จะดูเรื่องอะไรดีในชีวิต และแก้ปัญหาคนตัดสินใจยาก โดยจะใช้การ <span
+						class="font-bold text-red-400">"สุ่มหนัง"</span>แบบแยกเป็นหมวดหมู่ เพื่อการตัดสินใจที่ง่ายขึ้นมั้ง (อันนี้มั่ว)
+				</p>
+
+				<button
+					type="button"
+					onclick={closeWelcomeModal}
+					class="w-full cursor-pointer rounded-2xl border border-red-500/50 bg-gradient-to-r from-red-600 to-red-700 py-3 text-xs font-bold text-white shadow-[0_4px_20px_rgba(229,9,20,0.4)] transition-all hover:from-red-500 hover:to-red-600 hover:shadow-[0_4px_25px_rgba(229,9,20,0.6)] active:scale-95 sm:py-3.5 sm:text-sm"
+				>
+					เข้าใจแล้ว, ทราบแล้วเปลี่ยน
+				</button>
+			</div>
 		</div>
 	</div>
 {/if}
