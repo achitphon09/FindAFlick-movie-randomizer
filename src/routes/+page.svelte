@@ -1192,7 +1192,7 @@
 									<span>ไม่ถูกใจหรอ? สุ่มใหม่อีกที!</span>
 								</span>
 							</button>
-							
+
 							<button
 								onclick={closeRandomModal}
 								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg
@@ -1206,19 +1206,14 @@
 			</div>
 		</div>
 	</div>
-{/if}
 
-<!-- โปสเตอร์ใน Modal -->
-<div
-	class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48"
->
-	<!-- 🌟 กรณีที่กำลังหมุนวงล้อโปสเตอร์ -->
+	<!-- โปสเตอร์ใน Modal -->
+<div class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48">
+	<!-- กรณีที่กำลังหมุนวงล้อโปสเตอร์ -->
 	{#if isPosterReelSpinning && spinningPosterMovies.length > 0}
 		<div class="relative h-full w-full overflow-hidden">
-			<div
-				class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
-				style="animation-duration: 2.5s;"
-			>
+			<div class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
+				style="animation-duration: 2.5s;">
 				{#each spinningPosterMovies as dummyMovie, index}
 					<img
 						src="https://image.tmdb.org/t/p/w500{dummyMovie.poster_path}"
@@ -1228,12 +1223,11 @@
 				{/each}
 			</div>
 			<!-- เงาสะท้อนนิดหน่อยตอนหมุน -->
-			<div
-				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50"
-			></div>
+			<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50">
+			</div>
 		</div>
 
-		<!-- 🌟 กรณีปกติ (หลังสุ่มเสร็จแล้ว) หรือตอนโหลดรายละเอียดหนัง -->
+		<!-- กรณีปกติ (หลังสุ่มเสร็จแล้ว) หรือตอนโหลดรายละเอียดหนัง -->
 	{:else if randomMovie}
 		{#if randomMovie.poster_path}
 			<img
@@ -1245,13 +1239,15 @@
 			<div class="flex h-full items-center justify-center text-xs text-gray-500">ไม่มีรูปภาพ</div>
 		{/if}
 
-		<!-- 🌟 กรณีที่กำลังโหลดหนังผู้โชคดีอยู่ (ก่อน Modal จะแสดง) -->
+		<!-- กรณีที่กำลังโหลดหนังผู้โชคดีอยู่ (ก่อน Modal จะแสดง) -->
 	{:else}
 		<div class="flex h-full animate-pulse items-center justify-center text-xs text-gray-500">
 			กำลังสุ่ม...
 		</div>
 	{/if}
 </div>
+{/if}
+
 
 {#if isDetailModalOpen}
 	<!-- Backdrop คลิกพื้นหลังเพื่อปิด Modal ได้ -->
