@@ -514,9 +514,14 @@
 			<button
 				onclick={pickRandomMovie}
 				disabled={movies.length === 0 || isLoading}
-				class="cursor-pointer rounded-full bg-gradient-to-r from-red-600 to-orange-600 px-8 py-4
-				text-lg font-bold text-white shadow-lg shadow-red-600/40 transition-all hover:scale-105
-				active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+				class="cursor-pointer rounded-full 
+    			bg-gradient-to-r from-red-500 to-orange-500 px-8 py-4 
+    			text-lg font-extrabold text-white 
+    			shadow-[inset_0_3px_6px_rgba(255,255,255,0.4),inset_0_-5px_8px_rgba(0,0,0,0.3),0_12px_25px_rgba(239,68,68,0.4)] 
+    			transition-all duration-200 
+    			hover:from-red-400 hover:to-orange-400 hover:shadow-[inset_0_3px_6px_rgba(255,255,255,0.5),inset_0_-5px_8px_rgba(0,0,0,0.3),0_15px_30px_rgba(239,68,68,0.5)] 
+    			active:translate-y-1.5 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.3),0_4px_10px_rgba(239,68,68,0.3)] 
+    			disabled:cursor-not-allowed disabled:opacity-50"
 				>ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
 			</button>
 		</div>
