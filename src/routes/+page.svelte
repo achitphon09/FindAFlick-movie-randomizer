@@ -34,6 +34,7 @@
 	let showWelcomeModal = $state(false); // สถานะเปิด/ปิด ป๊อปอัพต้อนรับตอนเข้าเว็บครั้งแรก (ค่าเริ่มต้นเป็น false ไว้ก่อน)
 	let isPosterReelSpinning = $state(false); // สถานะกำลังหมุนวงล้อโปสเตอร์
 	let spinningPosterMovies = $state<any[]>([]); // อาร์เรย์เก็บรายชื่อหนังสำรองสำหรับทำแอนิเมชัน
+	let audioCtx: AudioContext | null = null; //ตัวแปรเสียง
 
 	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -463,6 +464,20 @@
 			isModalOpen = false;
 			console.error('Error fetching random movie reel:', e);
 		}
+
+		// ตัวอย่างตอนรันสล็อตหมุน
+		let tickCount = 0;
+		const spinInterval = setInterval(() => {
+			playTickSound(); // เล่นเสียงติ๊กทุกๆ จังหวะที่เปลี่ยนภาพ
+			tickCount++;
+			if (tickCount > 25) {
+				// สมมติหมุนครบจำนวนรอบแล้วหยุด
+				clearInterval(spinInterval);
+				// เล่นเสียงตอนหยุดสำเร็จ (ถ้าต้องการ)
+				isPosterReelSpinning = false;
+				playVictorySound();
+			}
+		}, 100);
 	}
 	/* 21.สุ่มเลือกหนังเด็ดๆ ขึ้นมา 1 เรื่อง */
 
@@ -496,6 +511,91 @@
 		}
 	}
 	/* 23.ป๊อบอัพเข้าเว็บครั้งแรก */
+
+	/* 24.ฟังก์ชั่นบอกรายได้หนัง */
+	function formatMoney(amount: number) {
+		if (!amount || amount === 0) return 'ไม่เปิดเผยข้อมูล';
+		return new Intl.NumberFormat('en-US', {
+			style: 'currency',
+			currency: 'USD',
+			maximumFractionDigits: 0
+		}).format(amount);
+	}
+	/* 24.ฟังก์ชั่นบอกรายได้หนัง */
+
+	/* 25.ฟังก์ชันสร้างเสียงติ๊กสั้นๆ ตอนสล็อตกำลังหมุน */
+	function playTickSound() {
+		try {
+			const ctx = getAudioContext();
+			const oscillator = ctx.createOscillator();
+			const gainNode = ctx.createGain();
+
+			oscillator.type = 'triangle';
+			oscillator.frequency.setValueAtTime(600, ctx.currentTime);
+			oscillator.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.04);
+
+			// ลดความดังลงนิดนึง (จาก 0.1 เหลือ 0.05) เพื่อกันเสียงแตกเวลาลำโพงมือถือหรือคอมเร่งดังๆ
+			gainNode.gain.setValueAtTime(0.05, ctx.currentTime);
+			gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+
+			oscillator.connect(gainNode);
+			gainNode.connect(ctx.destination);
+
+			oscillator.start();
+			oscillator.stop(ctx.currentTime + 0.04);
+		} catch (e) {
+			// ข้าม error ถ้าเบราว์เซอร์บล็อก
+		}
+	}
+	/* 25.ฟังก์ชันสร้างเสียงติ๊กสั้นๆ ตอนสล็อตกำลังหมุน */
+
+	/* 26.ฟังก์ชันสร้างเสียงฉลองตอนสุ่มหนังสำเร็จ */
+	function playVictorySound() {
+		try {
+			const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+			// โน้ตเพลงรัวขึ้นเป็นเสียงฉลอง (C Major Chord: C5, E5, G5, C6)
+			const notes = [523.25, 659.25, 783.99, 1046.5];
+
+			notes.forEach((freq, index) => {
+				const oscillator = audioCtx.createOscillator();
+				const gainNode = audioCtx.createGain();
+
+				oscillator.type = 'sine'; // เสียงนุ่มนวลฟังสบาย
+				oscillator.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.08);
+
+				// ไล่ระดับความดังและหน่วงเวลาให้ดังไล่เรียงกันไปทีละโน้ต
+				gainNode.gain.setValueAtTime(0, audioCtx.currentTime + index * 0.08);
+				gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + index * 0.08 + 0.02);
+				gainNode.gain.exponentialRampToValueAtTime(
+					0.001,
+					audioCtx.currentTime + index * 0.08 + 0.3
+				);
+
+				oscillator.connect(gainNode);
+				gainNode.connect(audioCtx.destination);
+
+				// เริ่มเล่นและหยุดตามจังหวะเวลาของแต่ละโน้ต
+				oscillator.start(audioCtx.currentTime + index * 0.08);
+				oscillator.stop(audioCtx.currentTime + index * 0.08 + 0.3);
+			});
+		} catch (e) {
+			// ป้องกัน Error กรณีที่เบราว์เซอร์บล็อก AudioContext
+		}
+	}
+	/* 26.ฟังก์ชันสร้างเสียงฉลองตอนสุ่มหนังสำเร็จ */
+
+	/* 27.แก้เสียงขาด */
+	function getAudioContext() {
+		if (!audioCtx) {
+			audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+		}
+		if (audioCtx.state === 'suspended') {
+			audioCtx.resume();
+		}
+		return audioCtx;
+	}
+	/* 27.แก้เสียงขาด */
 </script>
 
 <svelte:head>
@@ -514,13 +614,13 @@
 			<button
 				onclick={pickRandomMovie}
 				disabled={movies.length === 0 || isLoading}
-				class="cursor-pointer rounded-full 
-    			bg-gradient-to-r from-red-500 to-orange-500 px-8 py-4 
-    			text-lg font-extrabold text-white 
-    			shadow-[inset_0_3px_6px_rgba(255,255,255,0.4),inset_0_-5px_8px_rgba(0,0,0,0.3),0_12px_25px_rgba(239,68,68,0.4)] 
-    			transition-all duration-200 
-    			hover:from-red-400 hover:to-orange-400 hover:shadow-[inset_0_3px_6px_rgba(255,255,255,0.5),inset_0_-5px_8px_rgba(0,0,0,0.3),0_15px_30px_rgba(239,68,68,0.5)] 
-    			active:translate-y-1.5 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.3),0_4px_10px_rgba(239,68,68,0.3)] 
+				class="cursor-pointer rounded-full
+    			bg-gradient-to-r from-red-500 to-orange-500 px-8 py-4
+    			text-lg font-extrabold text-white
+    			shadow-[inset_0_3px_6px_rgba(255,255,255,0.4),inset_0_-5px_8px_rgba(0,0,0,0.3),0_12px_25px_rgba(239,68,68,0.4)]
+    			transition-all duration-200
+    			hover:from-red-400 hover:to-orange-400 hover:shadow-[inset_0_3px_6px_rgba(255,255,255,0.5),inset_0_-5px_8px_rgba(0,0,0,0.3),0_15px_30px_rgba(239,68,68,0.5)]
+    			active:translate-y-1.5 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.3),0_4px_10px_rgba(239,68,68,0.3)]
     			disabled:cursor-not-allowed disabled:opacity-50"
 				>ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
 			</button>
@@ -1191,9 +1291,12 @@
     							transition-all duration-200
     							hover:from-red-400 hover:to-red-600 hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-4px_6px_rgba(0,0,0,0.3),0_12px_25px_rgba(229,9,20,0.6)]
     							active:translate-y-1 active:shadow-[inset_0_2px_2px_rgba(0,0,0,0.3),0_4px_10px_rgba(229,9,20,0.3)]
-    							{isShaking ? 'animate-shake' : ''}">
+    							{isShaking ? 'animate-shake' : ''}"
+							>
 								<!-- ข้อความและไอคอน -->
-								<span class="relative z-10 flex items-center justify-center gap-2 drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]">
+								<span
+									class="relative z-10 flex items-center justify-center gap-2 drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"
+								>
 									<span>ไม่ถูกใจหรอ? สุ่มใหม่อีกที!</span>
 								</span>
 							</button>
@@ -1213,46 +1316,50 @@
 	</div>
 
 	<!-- โปสเตอร์ใน Modal -->
-<div class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48">
-	<!-- กรณีที่กำลังหมุนวงล้อโปสเตอร์ -->
-	{#if isPosterReelSpinning && spinningPosterMovies.length > 0}
-		<div class="relative h-full w-full overflow-hidden">
-			<div class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
-				style="animation-duration: 2.5s;">
-				{#each spinningPosterMovies as dummyMovie, index}
-					<img
-						src="https://image.tmdb.org/t/p/w500{dummyMovie.poster_path}"
-						alt="Loading Poster"
-						class="h-full w-full flex-shrink-0 object-cover"
-					/>
-				{/each}
+	<div
+		class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48"
+	>
+		<!-- กรณีที่กำลังหมุนวงล้อโปสเตอร์ -->
+		{#if isPosterReelSpinning && spinningPosterMovies.length > 0}
+			<div class="relative h-full w-full overflow-hidden">
+				<div
+					class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
+					style="animation-duration: 2.5s;"
+				>
+					{#each spinningPosterMovies as dummyMovie, index}
+						<img
+							src="https://image.tmdb.org/t/p/w500{dummyMovie.poster_path}"
+							alt="Loading Poster"
+							class="h-full w-full flex-shrink-0 object-cover"
+						/>
+					{/each}
+				</div>
+				<!-- เงาสะท้อนนิดหน่อยตอนหมุน -->
+				<div
+					class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50"
+				></div>
 			</div>
-			<!-- เงาสะท้อนนิดหน่อยตอนหมุน -->
-			<div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50">
-			</div>
-		</div>
 
-		<!-- กรณีปกติ (หลังสุ่มเสร็จแล้ว) หรือตอนโหลดรายละเอียดหนัง -->
-	{:else if randomMovie}
-		{#if randomMovie.poster_path}
-			<img
-				src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
-				alt={randomMovie.title}
-				class="h-full w-full object-cover"
-			/>
+			<!-- กรณีปกติ (หลังสุ่มเสร็จแล้ว) หรือตอนโหลดรายละเอียดหนัง -->
+		{:else if randomMovie}
+			{#if randomMovie.poster_path}
+				<img
+					src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
+					alt={randomMovie.title}
+					class="h-full w-full object-cover"
+				/>
+			{:else}
+				<div class="flex h-full items-center justify-center text-xs text-gray-500">ไม่มีรูปภาพ</div>
+			{/if}
+
+			<!-- กรณีที่กำลังโหลดหนังผู้โชคดีอยู่ (ก่อน Modal จะแสดง) -->
 		{:else}
-			<div class="flex h-full items-center justify-center text-xs text-gray-500">ไม่มีรูปภาพ</div>
+			<div class="flex h-full animate-pulse items-center justify-center text-xs text-gray-500">
+				กำลังสุ่ม...
+			</div>
 		{/if}
-
-		<!-- กรณีที่กำลังโหลดหนังผู้โชคดีอยู่ (ก่อน Modal จะแสดง) -->
-	{:else}
-		<div class="flex h-full animate-pulse items-center justify-center text-xs text-gray-500">
-			กำลังสุ่ม...
-		</div>
-	{/if}
-</div>
+	</div>
 {/if}
-
 
 {#if isDetailModalOpen}
 	<!-- Backdrop คลิกพื้นหลังเพื่อปิด Modal ได้ -->
@@ -1342,6 +1449,22 @@
 									{genre.name}
 								</span>
 							{/each}
+						</div>
+
+						<!-- รายได้ -->
+						<div class="mb-4 grid grid-cols-2 gap-3">
+							<div class="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
+								<h4 class="text-[11px] font-semibold text-gray-400">ทุนสร้าง (Budget)</h4>
+								<p class="mt-1 text-xs font-bold text-white">
+									{formatMoney(selectedMovieDetails.budget)}
+								</p>
+							</div>
+							<div class="rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm">
+								<h4 class="text-[11px] font-semibold text-gray-400">รายได้ (Revenue)</h4>
+								<p class="mt-1 text-xs font-bold text-emerald-300">
+									{formatMoney(selectedMovieDetails.revenue)}
+								</p>
+							</div>
 						</div>
 
 						<!-- ตัวอย่างหนัง YouTube -->
