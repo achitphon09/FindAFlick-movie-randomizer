@@ -622,7 +622,7 @@
     			hover:from-red-400 hover:to-orange-400 hover:shadow-[inset_0_3px_6px_rgba(255,255,255,0.5),inset_0_-5px_8px_rgba(0,0,0,0.3),0_15px_30px_rgba(239,68,68,0.5)]
     			active:translate-y-1.5 active:shadow-[inset_0_2px_3px_rgba(0,0,0,0.3),0_4px_10px_rgba(239,68,68,0.3)]
     			disabled:cursor-not-allowed disabled:opacity-50"
-				>ไม่รู้จะดูไร ก็สุ่มดิสุ่มเลยเร็ว!
+				>กดปุ่มนี้เพื่อสุ่ม
 			</button>
 		</div>
 
