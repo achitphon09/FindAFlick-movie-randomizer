@@ -35,6 +35,7 @@
 	let isPosterReelSpinning = $state(false); // สถานะกำลังหมุนวงล้อโปสเตอร์
 	let spinningPosterMovies = $state<any[]>([]); // อาร์เรย์เก็บรายชื่อหนังสำรองสำหรับทำแอนิเมชัน
 	let audioCtx: AudioContext | null = null; //ตัวแปรเสียง
+	let lastPickedMovie = $state<any>(null); // ตัวแปรเก็บข้อมูลหนังที่สุ่มได้ล่าสุด (เริ่มต้นเป็น null เพราะยังไม่ได้กดสุ่ม)
 
 	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -385,10 +386,19 @@
 			isShaking = false;
 		}, 400);
 
+		// เปิดเสียงติ๊กๆ ระหว่างหมุนสล็อต
+		let tickCount = 0;
+		const spinInterval = setInterval(() => {
+			playTickSound();
+			tickCount++;
+			if (tickCount > 25) {
+				clearInterval(spinInterval);
+			}
+		}, 100);
+
 		try {
 			// ดึงหนังชุดแรกมาสัก 2 หน้า (ประมาณ 40 เรื่อง) เพื่อเอามาเป็นวัตถุดิบสุ่มหมุน
 			let baseEndpoint = `/discover/movie?language=th-TH&sort_by=popularity.desc`;
-			// ถ้าเลือกหมวดหมู่/สตรีมมิ่ง ให้ใส่เงื่อนไขตามเดิม
 			if (selectedGenreId === 99999) {
 				baseEndpoint += `&with_keywords=180547`;
 			} else if (selectedGenreId) {
@@ -398,7 +408,6 @@
 				baseEndpoint += `&watch_region=TH&with_watch_providers=${selectedProviderId}`;
 			}
 
-			// ดึงข้อมูลหน้า 1 และ 2 มาพร้อมกันเพื่อความหลากหลาย
 			const [res1, res2] = await Promise.all([
 				fetch(`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + '&page=1')}`),
 				fetch(`/api/movies?endpoint=${encodeURIComponent(baseEndpoint + '&page=2')}`)
@@ -411,6 +420,7 @@
 			);
 
 			if (allDummyMovies.length === 0) {
+				clearInterval(spinInterval);
 				isPosterReelSpinning = false;
 				isModalOpen = false;
 				alert(
@@ -423,14 +433,12 @@
 			const pickedMovieIndex = Math.floor(Math.random() * allDummyMovies.length);
 			const finalMovie = allDummyMovies[pickedMovieIndex];
 
-			// สร้างอาร์เรย์หนังสำหรับทำอนิเมชันหมุน: เอาหนังผู้โชคดีไว้ท้ายสุด และสลับหนังเรื่องอื่นมาก่อนหน้า
-			// เราจะเอาหนังชุดนี้มาแสดงผลใน Modal แบบหมุนวนๆ
+			// สร้างอาร์เรย์หนังสำหรับทำอนิเมชันหมุน
 			let reelMoviesForAnimation = [];
 			for (let i = 0; i < 15; i++) {
 				let randomIndexForReel = Math.floor(Math.random() * allDummyMovies.length);
 				reelMoviesForAnimation.push(allDummyMovies[randomIndexForReel]);
 			}
-			// เอาหนังผู้โชคดีใส่ไว้ท้ายสุดของ Reel เพื่อให้เบรกหยุดตรงนี้
 			reelMoviesForAnimation.push(finalMovie);
 			spinningPosterMovies = reelMoviesForAnimation;
 
@@ -441,12 +449,15 @@
 				const detailRes = await fetch(`/api/movies?endpoint=${encodeURIComponent(detailEndpoint)}`);
 				const detailData = await detailRes.json();
 
-				// เซ็ตข้อมูลหนังจริงแล้วปิดโหมดหมุนวงล้อ
+				// เซ็ตข้อมูลหนังจริงทั้ง Modal และแบนเนอร์ล่าสุดตรงนี้
 				randomMovie = detailData;
+				lastPickedMovie = detailData; // บันทึกหนังที่สุ่มได้จริงลงแบนเนอร์
+
 				isPosterReelSpinning = false;
 				isModalOpen = true;
+				playVictorySound(); // เล่นเสียงฉลองตอนหยุดสลับ
 
-				// จัดการ Trailer และ Provider เหมือนเดิม
+				// จัดการ Trailer และ Provider
 				const videos = detailData.videos?.results || [];
 				let trailer =
 					videos.find(
@@ -458,26 +469,12 @@
 				if (detailData['watch/providers']?.results?.TH?.flatrate) {
 					randomMovieProviders = detailData['watch/providers'].results.TH.flatrate;
 				}
-			}, 2500); // หน่วงเวลา 2.5 วินาทีให้การหมุนดูอลังการ
+			}, 2500);
 		} catch (e) {
 			isPosterReelSpinning = false;
 			isModalOpen = false;
 			console.error('Error fetching random movie reel:', e);
 		}
-
-		// ตัวอย่างตอนรันสล็อตหมุน
-		let tickCount = 0;
-		const spinInterval = setInterval(() => {
-			playTickSound(); // เล่นเสียงติ๊กทุกๆ จังหวะที่เปลี่ยนภาพ
-			tickCount++;
-			if (tickCount > 25) {
-				// สมมติหมุนครบจำนวนรอบแล้วหยุด
-				clearInterval(spinInterval);
-				// เล่นเสียงตอนหยุดสำเร็จ (ถ้าต้องการ)
-				isPosterReelSpinning = false;
-				playVictorySound();
-			}
-		}, 100);
 	}
 	/* 21.สุ่มเลือกหนังเด็ดๆ ขึ้นมา 1 เรื่อง */
 
@@ -596,6 +593,16 @@
 		return audioCtx;
 	}
 	/* 27.แก้เสียงขาด */
+
+	/* 28.ตัวอย่างฟังก์ชันตอนสุ่มเสร็จแล้วได้หนังผู้โชคดี (เช่น randomMovie) */
+	function finishRandomMovie(winner: any) {
+		randomMovie = winner;
+		lastPickedMovie = winner;
+
+		// สั่งเปิด Modal แสดงรายละเอียด
+		openMovieModal(winner);
+	}
+	/* 28.ตัวอย่างฟังก์ชันตอนสุ่มเสร็จแล้วได้หนังผู้โชคดี (เช่น randomMovie) */
 </script>
 
 <svelte:head>
@@ -947,6 +954,89 @@
 							<path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
 						</svg>
 					</button>
+				</div>
+			</div>
+		{/if}
+
+		{#if lastPickedMovie}
+			<!-- เคสที่มีการสุ่มหนังแล้ว -->
+			<div
+				class="relative mb-8 overflow-hidden rounded-3xl border border-white/15 bg-white/5 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.37)] backdrop-blur-2xl transition-all duration-300 md:p-6"
+			>
+				<!-- แสงเรืองรองพื้นหลังกระจก (Glow Effect) -->
+				<div
+					class="pointer-events-none absolute -top-12 -right-12 h-44 w-44 rounded-full bg-amber-500/10 blur-3xl"
+				></div>
+				<div
+					class="pointer-events-none absolute -bottom-12 -left-12 h-44 w-44 rounded-full bg-red-500/10 blur-3xl"
+				></div>
+
+				<div class="relative z-10 flex flex-col items-center gap-5 md:flex-row md:gap-6">
+					<!-- โปสเตอร์หนัง ขอบกระจก -->
+					<div
+						class="relative h-40 w-28 flex-shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-lg md:h-36 md:w-24"
+					>
+						{#if lastPickedMovie.poster_path}
+							<img
+								src="https://image.tmdb.org/t/p/w300{lastPickedMovie.poster_path}"
+								alt={lastPickedMovie.title}
+								class="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+							/>
+						{:else}
+							<div class="flex h-full items-center justify-center bg-white/5 text-xs text-gray-400">
+								ไม่มีรูป
+							</div>
+						{/if}
+					</div>
+
+					<!-- รายละเอียดหนัง -->
+					<div class="flex flex-grow flex-col justify-center text-center md:text-left">
+						<div class="mb-2 flex items-center justify-center gap-2 md:justify-start">
+							<span
+								class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500
+							px-4 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-3px_6px_rgba(0,0,0,0.3),0_8px_20px_rgba(245,158,11,0.35)] transition-all duration-200 hover:scale-[1.02]"
+							>
+								<span class="drop-shadow-sm">ภาพยนตร์ที่สุ่มได้ล่าสุด</span>
+							</span>
+							<span
+								class="rounded-lg border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-yellow-300 backdrop-blur-sm"
+							>
+								⭐ IMDB {lastPickedMovie.vote_average
+									? lastPickedMovie.vote_average.toFixed(1)
+									: 'N/A'}
+							</span>
+						</div>
+
+						<h3
+							class="mb-1 text-xl font-extrabold tracking-wide text-white drop-shadow-md md:text-2xl"
+						>
+							{lastPickedMovie.title}
+						</h3>
+
+						<p class="mb-4 line-clamp-2 max-w-xl text-xs leading-relaxed text-gray-300/90">
+							{lastPickedMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อ'}
+						</p>
+					</div>
+				</div>
+			</div>
+		{:else}
+			<!-- เคสที่ยังไม่เคยกดสุ่มเลย -->
+			<div
+				class="relative mb-8 overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] p-6 text-center shadow-[0_8px_32px_rgba(0,0,0,0.2)] backdrop-blur-xl md:p-8"
+			>
+				<div
+					class="pointer-events-none absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-red-600/10 blur-3xl"
+				></div>
+
+				<div class="relative z-10 flex flex-col items-center justify-center gap-3">
+					<span class="animate-bounce text-3xl">🎰</span>
+					<h3 class="text-lg font-bold tracking-wide text-white">
+						อ้าวยังไม่ได้สุ่มภาพยนตร์เลยหนิ <br />
+						<span class="text-sm font-normal text-white">ลองกดสุ่มดูก่อนนะ</span>
+					</h3>
+					<p class="max-w-md text-xs leading-relaxed text-gray-400">
+						กดปุ่มสุ่มสีส้ม ๆ ด้านบนก่อน <br /> สุ่มได้เรื่องอะไรหนังจะมาโชว์ตรงนี้เอง <br />
+					</p>
 				</div>
 			</div>
 		{/if}
