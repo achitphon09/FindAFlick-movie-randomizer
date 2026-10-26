@@ -36,6 +36,7 @@
 	let spinningPosterMovies = $state<any[]>([]); // อาร์เรย์เก็บรายชื่อหนังสำรองสำหรับทำแอนิเมชัน
 	let audioCtx: AudioContext | null = null; //ตัวแปรเสียง
 	let lastPickedMovie = $state<any>(null); // ตัวแปรเก็บข้อมูลหนังที่สุ่มได้ล่าสุด (เริ่มต้นเป็น null เพราะยังไม่ได้กดสุ่ม)
+	const apiCache = new Map<string, any>(); // ตัวแปรเก็บ Cache ชั่วคราว (กันยิง API ซ้ำ)
 
 	/* 1.วิ่งไปดึงรายชื่อหนังตามหมวดหมู่ที่เลือกจาก API */
 	async function fetchMoviesByGenre(genreId: number, page: number = 1) {
@@ -45,6 +46,17 @@
 		selectedGenreId = genreId;
 		currentSort = null;
 		currentPage = page;
+
+		const cacheKey = `genre_${mediaType}_${genreId}_page_${page}`;
+
+		//  เช็กว่ามีข้อมูลใน Cache หรือยัง? ถ้ามี เอามาใช้ทันทีไม่ต้องยิง API
+		if (apiCache.has(cacheKey)) {
+			const cachedData = apiCache.get(cacheKey);
+			movies = cachedData.results || [];
+			totalPages = cachedData.total_pages > 500 ? 500 : cachedData.total_pages || 1;
+			isLoading = false;
+			return; // จบการทำงานตรงนี้เลย โคตรไว!
+		}
 
 		try {
 			const endpoint = `/discover/${mediaType}?with_genres=${genreId}&language=th-TH&page=${page}`;
@@ -243,8 +255,13 @@
 		const month = String(now.getMonth() + 1).padStart(2, '0');
 		const day = String(now.getDate()).padStart(2, '0');
 		const todayStr = `${year}-${month}-${day}`;
-		const storedDate = localStorage.getItem('dailyMovieDate_v2');
-		const storedMovie = localStorage.getItem('dailyMovieData_v2');
+
+		// 🌟 เติม ${mediaType} ต่อท้ายชื่อ Key เพื่อแยกความจำระหว่าง หนัง (movie) และ ซีรีส์ (tv)
+		const storageKeyDate = `dailyMovieDate_${mediaType}_v2`;
+		const storageKeyData = `dailyMovieData_${mediaType}_v2`;
+
+		const storedDate = localStorage.getItem(storageKeyDate);
+		const storedMovie = localStorage.getItem(storageKeyData);
 
 		if (storedDate === todayStr && storedMovie) {
 			dailyMovie = JSON.parse(storedMovie);
@@ -254,17 +271,21 @@
 			const seed = year * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
 			const page = (seed % 400) + 1;
 			const movieIndex = (seed * 7) % 20;
+
+			// 🌟 ใช้ endpoint ตาม mediaType ปัจจุบัน (ซึ่งในโค้ดเดิมมีอยู่แล้ว เยี่ยมมากครับ!)
 			const endpoint = `/discover/${mediaType}?language=th-TH&sort_by=popularity.desc&page=${page}`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
 
 			if (data.results && data.results.length > 0) {
 				dailyMovie = data.results[movieIndex] || data.results[0];
-				localStorage.setItem('dailyMovieDate_v2', todayStr);
-				localStorage.setItem('dailyMovieData_v2', JSON.stringify(dailyMovie));
+
+				// 🌟 บันทึกลง Key แยกตามโหมด
+				localStorage.setItem(storageKeyDate, todayStr);
+				localStorage.setItem(storageKeyData, JSON.stringify(dailyMovie));
 			}
 		} catch (error) {
-			console.error('Error fetching daily movie:', error);
+			console.error('Error fetching daily item:', error);
 		}
 	}
 	/* 13.วิ่งไปดึงข้อมูลหนังแนะนำประจำวันมาโชว์ */
@@ -613,6 +634,9 @@
 	async function switchMediaType(newType: 'movie' | 'tv') {
 		mediaType = newType;
 
+		await loadDailyMovie();
+		await fetchTopMovies();
+
 		if (selectedGenreId !== null) {
 			await fetchMoviesByGenre(selectedGenreId, 1);
 		} else {
@@ -629,7 +653,13 @@
 <main class="min-h-screen bg-black p-8 text-white">
 	<div class="mx-auto max-w-6xl">
 		<div class="mb-8 text-center">
-			<h1 class="mt-6 mb-2 text-5xl font-bold text-red-500">FindAFlick</h1>
+			<h1
+				class="mt-6 mb-2 text-5xl font-bold {mediaType === 'movie'
+					? 'text-red-500'
+					: 'text-cyan-400'}"
+			>
+				FindAFlick
+			</h1>
 			<p class="mb-6 text-xs whitespace-nowrap text-gray-300 sm:text-base md:text-lg">
 				อยากดูหนังแต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้
 			</p>
@@ -741,7 +771,10 @@
 					<button
 						type="button"
 						onclick={() => searchMovies()}
-						class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-red-500/20 text-red-400 transition-all hover:bg-red-500 hover:text-white active:scale-95"
+						class="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full transition-all active:scale-95 {mediaType ===
+						'movie'
+							? 'bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white'
+							: 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500 hover:text-white'}"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
@@ -848,7 +881,9 @@
 							onclick={() => toggleGenre(genre.id)}
 							class="flex-shrink-0 cursor-pointer rounded-2xl border px-4 py-2 text-sm font-semibold backdrop-blur-md transition-all duration-300 active:scale-95 {selectedGenreId ===
 							genre.id
-								? 'border-red-400 bg-red-600/80 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+								? mediaType === 'movie'
+									? 'border-red-400 bg-red-600/80 text-white shadow-[0_0_20px_rgba(239,68,68,0.3)]'
+									: 'border-cyan-400 bg-cyan-600/80 text-white shadow-[0_0_20px_rgba(6,182,212,0.3)]'
 								: 'border-white/10 bg-white/5 text-gray-400 hover:border-white/30 hover:bg-white/10 hover:text-white'}"
 						>
 							{genre.name}
@@ -915,7 +950,10 @@
 						<div class="flex flex-col justify-center">
 							<div class="mb-3">
 								<span
-									class="inline-block rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md"
+									class="inline-block rounded-full px-3 py-1 text-xs font-bold text-white shadow-lg shadow-red-500/30 backdrop-blur-md {mediaType ===
+									'movie'
+										? 'bg-red-600 shadow-red-500/30'
+										: 'bg-sky-600 shadow-sky-500/30'}"
 								>
 									Pick Of The Day 🍿
 								</span>
@@ -1091,10 +1129,11 @@
 					<div class="flex flex-grow flex-col justify-center text-center md:text-left">
 						<div class="mb-2 flex items-center justify-center gap-2 md:justify-start">
 							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500 to-orange-500
-							px-4 py-1.5 text-[11px] font-extrabold tracking-wide text-white shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-3px_6px_rgba(0,0,0,0.3),0_8px_20px_rgba(245,158,11,0.35)] transition-all duration-200 hover:scale-[1.02]"
+								class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10
+    px-4 py-1.5 text-[11px] font-extrabold tracking-wide text-white
+    shadow-[0_8px_20px_rgba(0,0,0,0.2)] backdrop-blur-xl transition-all duration-200 hover:scale-[1.02] hover:bg-white/15"
 							>
-								<span class="drop-shadow-sm">ภาพยนตร์ที่สุ่มได้ล่าสุด</span>
+								<span class="drop-shadow-sm">เมื่อกี้สุ่มได้เรื่องนี้ครับเตงเบ๊บ</span>
 							</span>
 							<span
 								class="rounded-lg border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-semibold text-yellow-300 backdrop-blur-sm"
@@ -1127,13 +1166,30 @@
 				></div>
 
 				<div class="relative z-10 flex flex-col items-center justify-center gap-3">
-					<span class="animate-bounce text-3xl">🎰</span>
+					<span class="animate-bounce text-3xl">
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="16"
+							height="16"
+							fill="currentColor"
+							class="bi bi-camera-reels-fill"
+							viewBox="0 0 16 16"
+						>
+							<path d="M6 3a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+							<path d="M9 6a3 3 0 1 1 0-6 3 3 0 0 1 0 6" />
+							<path
+								d="M9 6h.5a2 2 0 0 1 1.983 1.738l3.11-1.382A1 1 0 0 1 16 7.269v7.462a1 1 0 0 1-1.406.913l-3.111-1.382A2 2 0 0 1 9.5 16H2a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
+							/>
+						</svg>
+					</span>
 					<h3 class="text-lg font-bold tracking-wide text-white">
 						อ้าวยังไม่ได้สุ่ม{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}เลยหนิ <br />
 						<span class="text-sm font-normal text-white">ลองกดสุ่มดูก่อนนะ</span>
 					</h3>
 					<p class="max-w-md text-xs leading-relaxed text-gray-400">
-						กดปุ่มสุ่มสีส้ม ๆ ด้านบนก่อน <br /> สุ่มได้เรื่องอะไร{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}จะมาโชว์ตรงนี้เอง <br />
+						กดปุ่มสุ่มสีส้ม ๆ ด้านบนก่อน <br /> สุ่มได้เรื่องอะไร{mediaType === 'movie'
+							? 'ภาพยนตร์'
+							: 'ซีรีส์'}จะมาโชว์ตรงนี้เอง <br />
 					</p>
 				</div>
 			</div>
@@ -1153,7 +1209,8 @@
 					{#if isLoading}
 						<span class="animate-pulse">กำลังโหลดข้อมูลครับเฮีย...</span>
 					{:else}
-						พบ{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'} <span class="font-bold text-white">{movies.length}</span> เรื่อง
+						พบ{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}
+						<span class="font-bold text-white">{movies.length}</span> เรื่อง
 					{/if}
 				</span>
 			</div>
@@ -1166,14 +1223,17 @@
 				</div>
 			{:else if movies.length > 0}
 				<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-					{#each movies as movie}
+					{#each movies as movie, index}
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<div
 							onclick={() => openMovieDetails(movie.id, mediaType)}
-							class="group flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-white/10
-							bg-white/5 shadow-lg backdrop-blur-md transition-all duration-300 hover:-translate-y-2
-							hover:border-red-400/50 hover:bg-white/10 hover:shadow-[0_0_25px_rgba(248,113,113,0.15)]"
+							class="group fade-in-card flex cursor-pointer flex-col overflow-hidden rounded-2xl border
+							border-white/10 bg-white/5 shadow-lg backdrop-blur-md transition-all duration-300
+							hover:-translate-y-2 {mediaType === 'movie'
+								? 'hover:border-red-400/50 hover:shadow-[0_0_25px_rgba(248,113,113,0.15)]'
+								: 'hover:border-cyan-400/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)]'} hover:bg-white/10"
+							style="animation-delay: {(index % 10) * 50}ms;"
 						>
 							<div class="relative aspect-[2/3] w-full overflow-hidden bg-black/40">
 								{#if movie.poster_path}
@@ -1202,7 +1262,10 @@
 								class="flex flex-grow cursor-pointer flex-col justify-between border-t border-white/5 bg-black/20 p-4"
 							>
 								<h3
-									class="mb-1 line-clamp-1 text-sm font-semibold text-white transition-colors group-hover:text-red-500"
+									class="mb-1 line-clamp-1 text-sm font-semibold text-white transition-colors {mediaType ===
+									'movie'
+										? 'group-hover:text-red-500'
+										: 'group-hover:text-cyan-400'}"
 									title={movie.title || movie.name}
 								>
 									{movie.title || movie.name}
@@ -1453,6 +1516,20 @@
                                     bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all
                                     hover:bg-red-600 active:scale-95"
 								>
+									<span
+										><svg
+											xmlns="http://www.w3.org/2000/svg"
+											width="16"
+											height="16"
+											fill="currentColor"
+											class="bi bi-youtube"
+											viewBox="0 0 16 16"
+										>
+											<path
+												d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.01 2.01 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A100 100 0 0 1 7.858 2zM6.4 5.209v4.818l4.157-2.408z"
+											/>
+										</svg>
+									</span>
 									<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
 								</button>
 							{/if}
@@ -1684,6 +1761,20 @@
 								onclick={() => (isPlayingTrailer = true)}
 								class="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all hover:bg-red-600 active:scale-95"
 							>
+								<span
+									><svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="16"
+										height="16"
+										fill="currentColor"
+										class="bi bi-youtube"
+										viewBox="0 0 16 16"
+									>
+										<path
+											d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.01 2.01 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A100 100 0 0 1 7.858 2zM6.4 5.209v4.818l4.157-2.408z"
+										/>
+									</svg>
+								</span>
 								<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
 							</button>
 						{/if}
@@ -1905,5 +1996,21 @@
 
 	.animate-poster-reel {
 		animation: poster-reel 2.5s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+	}
+
+	/* สถานะเริ่มต้นก่อนการ์ดจะโผล่ขึ้นจอ (ซ่อนและขยับลงล่างนิดหน่อย) */
+	@keyframes fadeInUpSmooth {
+		from {
+			opacity: 0;
+			transform: translateY(30px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.fade-in-card {
+		animation: fadeInUpSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
 </style>
