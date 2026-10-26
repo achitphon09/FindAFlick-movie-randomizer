@@ -1116,7 +1116,7 @@
 						{#if lastPickedMovie.poster_path}
 							<img
 								src="https://image.tmdb.org/t/p/w300{lastPickedMovie.poster_path}"
-								alt={lastPickedMovie.title}
+								alt={lastPickedMovie.title || lastPickedMovie.name}
 								class="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
 							/>
 						{:else}
@@ -1148,7 +1148,7 @@
 						<h3
 							class="mb-1 text-xl font-extrabold tracking-wide text-white drop-shadow-md md:text-2xl"
 						>
-							{lastPickedMovie.title}
+							{lastPickedMovie.title || lastPickedMovie.name}
 						</h3>
 
 						<p class="mb-4 line-clamp-2 max-w-xl text-xs leading-relaxed text-gray-300/90">
