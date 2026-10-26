@@ -661,22 +661,21 @@
 				FindAFlick
 			</h1>
 			<p class="mb-6 text-xs whitespace-nowrap text-gray-300 sm:text-base md:text-lg">
-				อยากดูหนังแต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้
+				อยากดู{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}แต่ไม่รู้จะดูเรื่องไร ให้เราจัดการให้
 			</p>
 
 			<!-- ปุ่ม Toggle สลับโหมดแบบเรียลไทม์ -->
 			<div class="mb-6 flex justify-center">
-				<!-- กล่องหลัก (ใช้เงาสไตล์ Clay ผิวสัมผัสนุ่มๆ) -->
 				<div
-					class="relative flex w-72 rounded-full border border-white/10 bg-neutral-900/80 p-1.5 shadow-[0_8px_20px_rgba(0,0,0,0.4),inset_0_2px_4px_rgba(255,255,255,0.1)] backdrop-blur-xl"
+					class="relative flex w-80 rounded-2xl border border-white/10 bg-neutral-900/90 p-1 backdrop-blur-2xl"
 				>
 					<!-- ปุ่มโหมดภาพยนตร์ -->
 					<button
 						type="button"
 						onclick={() => switchMediaType('movie')}
-						class="relative z-10 flex w-1/2 cursor-pointer items-center justify-center py-3 text-xs font-bold transition-all duration-300 {mediaType ===
+						class="relative z-10 flex w-1/2 cursor-pointer items-center justify-center py-3 text-xs font-bold transition-colors duration-300 {mediaType ===
 						'movie'
-							? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]'
+							? 'text-white'
 							: 'text-neutral-400 hover:text-white'}"
 					>
 						<span>ภาพยนตร์</span>
@@ -686,22 +685,22 @@
 					<button
 						type="button"
 						onclick={() => switchMediaType('tv')}
-						class="relative z-10 flex w-1/2 cursor-pointer items-center justify-center py-3 text-xs font-bold transition-all duration-300 {mediaType ===
+						class="relative z-10 flex w-1/2 cursor-pointer items-center justify-center py-3 text-xs font-bold transition-colors duration-300 {mediaType ===
 						'tv'
-							? 'text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]'
+							? 'text-white'
 							: 'text-neutral-400 hover:text-white'}"
 					>
 						<span>ซีรีส์</span>
 					</button>
 
-					<!-- แผ่นพื้นหลังเลื่อนสลับ (ใส่เงาปุ่มนูนแบบ Claymorphism) -->
+					<!-- แผ่นพื้นหลังสลับโหมด (ทรงแคปซูลมนขอบกระจกใส + เรืองแสงเบาๆ ตามโหมด) -->
 					<div
-						class="absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-full 
-    shadow-[0_6px_15px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.3)] 
-    transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]
-    {mediaType === 'movie' 
-        ? 'translate-x-0 bg-gradient-to-r from-red-500 to-orange-500' 
-        : 'translate-x-[calc(100%+6px)] bg-gradient-to-r from-cyan-400 to-blue-600'}"
+						class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] rounded-xl border border-white/20 
+    shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-md 
+    transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+    {mediaType === 'movie'
+        ? 'translate-x-0 bg-gradient-to-r from-red-500 to-orange-500 shadow-[0_0_20px_rgba(239,68,68,0.4)] border-red-400/50'
+        : 'translate-x-full bg-gradient-to-r from-cyan-400 to-blue-600 shadow-[0_0_20px_rgba(6,182,212,0.4)] border-cyan-300/50'}"
 					></div>
 				</div>
 			</div>
@@ -2017,7 +2016,7 @@
 	}
 
 	/* เอฟเฟกต์ความพริ้วไหวแบบหยดน้ำตอนกดสลับปุ่ม */
-.relative.flex.w-72 div[class*="absolute"] {
-    will-change: left, transform;
-}
+	.relative.flex.w-72 div[class*='absolute'] {
+		will-change: left, transform;
+	}
 </style>
