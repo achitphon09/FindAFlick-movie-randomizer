@@ -696,7 +696,7 @@
 
 					<!-- แผ่นพื้นหลังเลื่อนสลับ (ใส่เงาปุ่มนูนแบบ Claymorphism) -->
 					<div
-						class="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full shadow-[0_6px_15px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.3)] transition-all duration-300 ease-out {mediaType ===
+						class="absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full shadow-[0_6px_15px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.3)] transition-all duration-500 ease-[cubic-bezier(0.68,-0.55,0.265,1.55)] hover:scale-105 active:scale-95 {mediaType ===
 						'movie'
 							? 'left-1.5 bg-gradient-to-r from-red-500 to-orange-500'
 							: 'left-[calc(50%+3px)] bg-gradient-to-r from-cyan-400 to-blue-600'}"
@@ -2013,4 +2013,9 @@
 	.fade-in-card {
 		animation: fadeInUpSmooth 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}
+
+	/* เอฟเฟกต์ความพริ้วไหวแบบหยดน้ำตอนกดสลับปุ่ม */
+.relative.flex.w-72 div[class*="absolute"] {
+    will-change: left, transform;
+}
 </style>
