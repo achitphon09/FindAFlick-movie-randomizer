@@ -1188,7 +1188,7 @@
 						<span class="text-sm font-normal text-white">ลองกดสุ่มดูก่อนนะ</span>
 					</h3>
 					<p class="max-w-md text-xs leading-relaxed text-gray-400">
-						กดปุ่มสุ่มสีส้ม ๆ ด้านบนก่อน <br /> สุ่มได้เรื่องอะไร{mediaType === 'movie'
+						กดปุ่มสุ่มด้านบนก่อน <br /> สุ่มได้เรื่องอะไร{mediaType === 'movie'
 							? 'ภาพยนตร์'
 							: 'ซีรีส์'}จะมาโชว์ตรงนี้เอง <br />
 					</p>
@@ -1531,7 +1531,7 @@
 											/>
 										</svg>
 									</span>
-									<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
+									<span>ชมตัวอย่าง{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'} (Trailer)</span>
 								</button>
 							{/if}
 						{:else}
@@ -1776,7 +1776,7 @@
 										/>
 									</svg>
 								</span>
-								<span>ชมตัวอย่างภาพยนตร์ (Trailer)</span>
+								<span>ชมตัวอย่าง{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'} (Trailer)</span>
 							</button>
 						{/if}
 
