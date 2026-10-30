@@ -256,7 +256,6 @@
 		const day = String(now.getDate()).padStart(2, '0');
 		const todayStr = `${year}-${month}-${day}`;
 
-		// 🌟 เติม ${mediaType} ต่อท้ายชื่อ Key เพื่อแยกความจำระหว่าง หนัง (movie) และ ซีรีส์ (tv)
 		const storageKeyDate = `dailyMovieDate_${mediaType}_v2`;
 		const storageKeyData = `dailyMovieData_${mediaType}_v2`;
 
@@ -272,7 +271,6 @@
 			const page = (seed % 400) + 1;
 			const movieIndex = (seed * 7) % 20;
 
-			// 🌟 ใช้ endpoint ตาม mediaType ปัจจุบัน (ซึ่งในโค้ดเดิมมีอยู่แล้ว เยี่ยมมากครับ!)
 			const endpoint = `/discover/${mediaType}?language=th-TH&sort_by=popularity.desc&page=${page}`;
 			const res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			const data = await res.json();
@@ -280,7 +278,6 @@
 			if (data.results && data.results.length > 0) {
 				dailyMovie = data.results[movieIndex] || data.results[0];
 
-				// 🌟 บันทึกลง Key แยกตามโหมด
 				localStorage.setItem(storageKeyDate, todayStr);
 				localStorage.setItem(storageKeyData, JSON.stringify(dailyMovie));
 			}
@@ -960,7 +957,7 @@
 								</span>
 							</div>
 							<h3 class="mb-2 text-3xl font-bold text-white drop-shadow-md md:text-4xl">
-								{dailyMovie.title}
+								{dailyMovie.title || dailyMovie.name}
 							</h3>
 
 							<div class="mb-4 flex items-center gap-3 text-sm text-gray-300">
