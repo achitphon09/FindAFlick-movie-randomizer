@@ -30,7 +30,9 @@
 	let dailyMovie = $state<any>(null); // หนังแนะนำประจำวัน
 	let castContainer = $state<HTMLElement | null>(null); // กล่องรายชื่อนักแสดง
 	let mediaType = $state<'movie' | 'tv'>('movie'); // โหมดปัจจุบัน (หนัง หรือ ซีรีส์)
-	let isAnyModalOpen = $derived(isModalOpen || isDetailModalOpen || showWelcomeModal); // เช็กให้แน่ใจว่ามี modal เปิดอยู่ไหม
+	let isAnyModalOpen = $derived(
+		isModalOpen || isDetailModalOpen || showWelcomeModal || isSwipeModeOpen || isWatchlistOpen
+	); // เช็กให้แน่ใจว่ามี modal เปิดอยู่ไหม
 	let showWelcomeModal = $state(false); // สถานะเปิด/ปิด ป๊อปอัพต้อนรับตอนเข้าเว็บครั้งแรก (ค่าเริ่มต้นเป็น false ไว้ก่อน)
 	let isPosterReelSpinning = $state(false); // สถานะกำลังหมุนวงล้อโปสเตอร์
 	let spinningPosterMovies = $state<any[]>([]); // อาร์เรย์เก็บรายชื่อหนังสำรองสำหรับทำแอนิเมชัน
