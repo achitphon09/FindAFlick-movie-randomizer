@@ -649,7 +649,7 @@
 	/* 29.ฟังก์ชันสำหรับกดปุ่มสลับโหมดแบบเรียลไทม์ */
 	async function switchMediaType(newType: 'movie' | 'tv') {
 		mediaType = newType;
-		selectedGenreId = null; // 👈 ล้างหมวดหมู่เดิมทันที เพราะ ID หมวดหมู่หนังกับซีรีส์ไม่ตรงกัน
+		selectedGenreId = null; // ล้างหมวดหมู่เดิมทันที เพราะ ID หมวดหมู่หนังกับซีรีส์ไม่ตรงกัน
 		selectedProviderId = null;
 
 		await loadDailyMovie();
@@ -683,13 +683,13 @@
 		syncLocalStorage();
 	}
 
-	// ดึงข้อมูลหนัง/ซีรีส์ชุดใหม่มาต่อท้ายกองปัดผ่าน API เดิมของพี่แซม
+	// ดึงข้อมูลหนัง/ซีรีส์ชุดใหม่มาต่อท้ายกองปัดผ่าน API เดิม
 	async function fetchMoreSwipeCards() {
 		if (isLoadingMore) return;
 		isLoadingMore = true;
 
 		try {
-			// 💡 ซีรีส์สุ่มหน้า 1-5 (ปลอดภัยจากการเจอหน้าว่าง) ส่วนหนังสุ่มหน้า 1-15
+			// ซีรีส์สุ่มหน้า 1-5 (ปลอดภัยจากการเจอหน้าว่าง) ส่วนหนังสุ่มหน้า 1-15
 			const maxPage = mediaType === 'tv' ? 5 : 15;
 			let randomPage = Math.floor(Math.random() * maxPage) + 1;
 
@@ -705,7 +705,7 @@
 			let res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
 			let data = await res.json();
 
-			// 🛡️ Fallback: ถ้าสุ่มเจอหน้าว่าง ให้ดึงหน้า 1 มาแทนทันที (กันค้าง)
+			// Fallback: ถ้าสุ่มเจอหน้าว่าง ให้ดึงหน้า 1 มาแทนทันที (กันค้าง)
 			if (!data.results || data.results.length === 0) {
 				endpoint = `/discover/${mediaType}?language=th-TH&sort_by=popularity.desc&page=1`;
 				res = await fetch(`/api/movies?endpoint=${encodeURIComponent(endpoint)}`);
@@ -818,6 +818,34 @@
 		}
 	});
 	// 30.เปิด-ปิดโหมด Swipe
+
+	// 31.สร้างลิงก์เด้งไปหน้าค้นหาเรื่องนั้นบนแพลตฟอร์มสตรีมมิ่งทันที
+	function getStreamingUrl(provider: any, movie: any): string {
+		const rawTitle = movie?.original_title || movie?.original_name || movie?.title || movie?.name || '';
+		const query = encodeURIComponent(rawTitle);
+
+		switch (provider.provider_id) {
+			case 8: // Netflix
+				return `https://www.netflix.com/search?q=${query}`;
+			case 122: // Disney+ Hotstar
+				return `https://www.hotstar.com/th/explore?search_query=${query}`;
+			case 119: // Prime Video
+				return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${query}`;
+			case 191: // iQIYI
+				return `https://www.iq.com/search?query=${query}`;
+			case 350: // Apple TV+
+				return `https://tv.apple.com/th/search?term=${query}`;
+			case 158: // Viu
+				return `https://www.viu.com/ott/th/th/search?keyword=${query}`;
+			case 1899: // Max
+			case 315: // HBO GO
+				return `https://play.max.com/search?q=${query}`;
+			default:
+				// แพลตฟอร์มอื่นๆ ให้ค้นหาชื่อแอป + ชื่อเรื่อง
+				return `https://www.google.com/search?q=${encodeURIComponent(`${provider.provider_name} ${rawTitle}`)}`;
+		}
+	}
+	// 31.สร้างลิงก์เด้งไปหน้าค้นหาเรื่องนั้นบนแพลตฟอร์มสตรีมมิ่งทันที
 </script>
 
 <svelte:head>
@@ -889,7 +917,7 @@
 		</div>
 
 		<!-- ปุ่มเปิด Swipe Mode -->
-<div class="my-8 flex justify-center">
+<!-- <div class="my-8 flex justify-center">
     <button 
         type="button"
         onclick= {openSwipeMode}
@@ -904,13 +932,12 @@
             {mediaType === 'movie' ? 'โหมดปัดหาหนัง (Swipe Mode)' : 'โหมดปัดหาซีรีส์ (Swipe Mode)'}
         </span>
     </button>
-</div>
+</div> -->
 
 <!-- หน้าต่าง Swipe (แสดงเมื่อ isSwipeModeOpen = true) -->
 {#if isSwipeModeOpen}
-    <div class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl transition-all duration-500 cursor-pointer">
+    <!-- <div class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 backdrop-blur-xl transition-all duration-500 cursor-pointer">
         
-        <!-- ปุ่มปิด -->
         <button 
     type="button"
     onclick={() => isSwipeModeOpen = false}
@@ -928,7 +955,6 @@
     </svg>
 </button>
 
-        <!-- กล่องจำกัดขอบเขตการ์ด -->
         <div class="relative h-[75vh] w-full max-w-sm">
             {#each swipeCards as card, index}
                 {#if index >= currentIndex && index < currentIndex + 2}
@@ -948,7 +974,7 @@
                         ontouchend={handleDragEnd}
                         role="presentation"
                     >
-                        <!-- ตราประทับ Like / Nope -->
+                    
                         {#if index === currentIndex && Math.abs(currentX) > 20}
                             <div class="absolute top-12 left-0 right-0 z-50 flex justify-between px-8 pointer-events-none">
                                 <span class="rounded-xl border-4 border-red-500 bg-black/40 px-6 py-2 text-4xl font-black text-red-500 backdrop-blur-sm transition-opacity rotate-[-15deg] {currentX < 0 ? 'opacity-100' : 'opacity-0'}">
@@ -960,7 +986,7 @@
                             </div>
                         {/if}
 
-                        <!-- วิดีโอพื้นหลัง หรือ โปสเตอร์ -->
+                    
                         <div class="pointer-events-none absolute inset-0 z-0 overflow-hidden bg-black">
                             {#if index === currentIndex && card.yt_key}
                                 <iframe
@@ -977,11 +1003,11 @@
                                     class="h-full w-full object-cover opacity-50"
                                 />
                             {/if}
-                            <!-- Gradient ไล่สีให้ข้อความชัด -->
+                            
                             <div class="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
                         </div>
 
-                        <!-- รายละเอียดหนังด้านล่าง -->
+                       
                         <div class="relative z-10 p-6 pb-8 text-white pointer-events-none">
                             <span class="mb-3 inline-flex items-center gap-1 rounded-full bg-yellow-500/20 border border-yellow-500/30 px-3 py-1 text-xs font-bold text-yellow-400 backdrop-blur-md">
                                 ⭐ IMDB {card.vote_average.toFixed(1)}
@@ -997,7 +1023,6 @@
                 {/if}
             {/each}
 
-            <!-- หน้าต่างเมื่อปัดหมด -->
             {#if currentIndex >= swipeCards.length}
                 <div class="absolute inset-0 flex flex-col items-center justify-center text-center text-white">
                     <h3 class="text-2xl font-bold mb-2">หมดกองแล้วครับ</h3>
@@ -1012,11 +1037,11 @@
                 </div>
             {/if}
         </div>
-    </div>
+    </div> -->
 {/if}
 
 <!-- ปุ่มลอยมุมขวาล่าง สำหรับเปิดดูคลังหนัง -->
-<div class="fixed bottom-6 right-6 z-[90]">
+<!-- <div class="fixed bottom-6 right-6 z-[90]">
     <button 
         type="button"
         onclick={() => isWatchlistOpen = true}
@@ -1035,7 +1060,7 @@
             </span>
         {/if}
     </button>
-</div>
+</div> -->
 
 <!-- หน้าต่างโชว์ลิสต์หนังที่ปัดขวา -->
 {#if isWatchlistOpen}
@@ -1900,8 +1925,11 @@
 									</h4>
 									<div class="flex flex-wrap gap-2">
 										{#each randomMovieProviders as provider}
-											<div
-												class="flex items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-2 py-1 pr-3 shadow-sm transition-colors hover:bg-white/20"
+											<a
+												href={getStreamingUrl(provider, randomMovie)}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-2 py-1 pr-3 shadow-sm transition-all hover:scale-105 hover:border-white/30 hover:bg-white/20 active:scale-95"
 											>
 												<img
 													src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
@@ -1909,7 +1937,7 @@
 													class="h-6 w-6 rounded-md object-cover shadow-sm"
 												/>
 												<span class="text-xs font-bold text-white">{provider.provider_name}</span>
-											</div>
+											</a>
 										{/each}
 									</div>
 								</div>
@@ -2198,16 +2226,25 @@
 
 						<!-- แพลตฟอร์มสตรีมมิ่ง -->
 						<div class="mb-6">
-							<h4 class="mb-3 text-sm font-semibold text-gray-400">ดูได้ที่ไหนบ้าง (สตรีมมิ่ง)</h4>
+							<h4 class="mb-3 text-sm font-semibold text-gray-400">
+								ดูได้ที่ไหนบ้าง
+							</h4>
 							<div class="flex flex-wrap gap-3">
 								{#if selectedMovieDetails['watch/providers']?.results?.TH?.flatrate}
 									{#each selectedMovieDetails['watch/providers'].results.TH.flatrate as provider}
-										<img
-											src="https://image.tmdb.org/t/p/w92{provider.logo_path}"
-											alt={provider.provider_name}
-											title={provider.provider_name}
-											class="h-10 w-10 rounded-xl shadow-lg transition-transform hover:scale-110"
-										/>
+										<a
+											href={getStreamingUrl(provider, selectedMovieDetails)}
+											target="_blank"
+											rel="noopener noreferrer"
+											title="เปิดดูบน {provider.provider_name}"
+											class="cursor-pointer transition-transform hover:scale-110 active:scale-95"
+										>
+											<img
+												src="https://image.tmdb.org/t/p/w92{provider.logo_path}"
+												alt={provider.provider_name}
+												class="h-10 w-10 rounded-xl shadow-lg"
+											/>
+										</a>
 									{/each}
 								{:else}
 									<span
