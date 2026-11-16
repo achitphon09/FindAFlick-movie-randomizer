@@ -823,12 +823,16 @@
 	function getStreamingUrl(provider: any, movie: any): string {
 		const rawTitle = movie?.original_title || movie?.original_name || movie?.title || movie?.name || '';
 		const query = encodeURIComponent(rawTitle);
+		const providerName = (provider?.provider_name || '').toLowerCase();
+
+		// ชี้ตรงไปที่ disneyplus.com (ไม่ผ่าน hotstar ที่ redirect เสีย)
+		if (provider.provider_id === 122 || provider.provider_id === 337 || providerName.includes('disney')) {
+			return `https://www.disneyplus.com`;
+		}
 
 		switch (provider.provider_id) {
 			case 8: // Netflix
 				return `https://www.netflix.com/search?q=${query}`;
-			case 122: // Disney+ Hotstar
-				return `https://www.hotstar.com/th/explore?search_query=${query}`;
 			case 119: // Prime Video
 				return `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${query}`;
 			case 191: // iQIYI
@@ -841,7 +845,6 @@
 			case 315: // HBO GO
 				return `https://play.max.com/search?q=${query}`;
 			default:
-				// แพลตฟอร์มอื่นๆ ให้ค้นหาชื่อแอป + ชื่อเรื่อง
 				return `https://www.google.com/search?q=${encodeURIComponent(`${provider.provider_name} ${rawTitle}`)}`;
 		}
 	}
