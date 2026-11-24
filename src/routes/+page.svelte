@@ -1298,7 +1298,7 @@
 										<span
 											class="rounded-md border border-white/15 bg-black/50 px-2.5 py-1 text-xs font-bold text-yellow-400 backdrop-blur-md"
 										>
-											⭐ {movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}
+											⭐ IMDB {movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}
 										</span>
 
 										{#if movie.original_language}
@@ -1397,48 +1397,6 @@
 													/>
 												</svg>
 												<span>ตัวอย่าง</span>
-											{/if}
-										</button>
-
-										<!-- ปุ่ม + เพิ่มเข้าคลัง -->
-										<button
-											type="button"
-											onclick={() => toggleCarouselWatchlist(movie)}
-											title={isSaved ? 'อยู่ในคลังแล้ว (กดเพื่อนำออก)' : 'เพิ่มเข้าคลังที่ปัดไว้'}
-											class="flex h-[50px] w-[50px] cursor-pointer items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-200 hover:scale-105 active:scale-95 {isSaved
-												? 'border-emerald-400/50 bg-emerald-500/20 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.25)]'
-												: 'border-white/25 bg-white/10 text-white hover:border-white/60 hover:bg-white/20'}"
-										>
-											{#if isSaved}
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													stroke-width="2.5"
-													stroke="currentColor"
-													class="h-6 w-6"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														d="m4.5 12.75 6 6 9-13.5"
-													/>
-												</svg>
-											{:else}
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													stroke-width="2.5"
-													stroke="currentColor"
-													class="h-6 w-6"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														d="M12 4.5v15m7.5-7.5h-15"
-													/>
-												</svg>
 											{/if}
 										</button>
 									</div>
