@@ -2217,7 +2217,7 @@
 				</div>
 			{:else if selectedMovieDetails}
 				<div
-					class="flex flex-1 [scrollbar-width:none] flex-col overflow-y-auto [-ms-overflow-style:none] md:flex-row [&::-webkit-scrollbar]:hidden"
+					class="flex min-h-0 flex-1 [scrollbar-width:none] flex-col overflow-y-auto [-ms-overflow-style:none] md:flex-row md:overflow-hidden [&::-webkit-scrollbar]:hidden"
 				>
 					<!-- โปสเตอร์ด้านซ้าย -->
 					<div class="relative w-full flex-shrink-0 bg-black/40 md:w-1/3">
@@ -2234,8 +2234,10 @@
 						{/if}
 					</div>
 
-					<!-- ข้อมูลด้านขวา -->
-					<div class="flex flex-col p-6 md:w-2/3 md:p-8">
+					<!-- ข้อมูลด้านขวา (เพิ่ม md:overflow-y-auto ให้เลื่อนเฉพาะฝั่งขวาบน Desktop) -->
+					<div
+						class="flex flex-col p-6 [scrollbar-width:none] [-ms-overflow-style:none] md:w-2/3 md:overflow-y-auto md:p-8 [&::-webkit-scrollbar]:hidden"
+					>
 						<div class="mb-2 flex items-center justify-between">
 							<span
 								class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-sm font-bold text-yellow-300"
@@ -2283,11 +2285,10 @@
 							</div>
 						</div>
 
-						<!-- ตัวอย่าง YouTube -->
+						<!-- ตัวอย่าง YouTube (เพิ่ม shrink-0 กันโดนบีบความสูงเหลือ 0 บน Desktop) -->
 						{#if isPlayingTrailer && trailerKey}
 							<div
-								class="relative isolate mb-4 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
-								style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);"
+								class="relative isolate mb-4 aspect-video w-full shrink-0 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
 							>
 								<iframe
 									src={`https://www.youtube.com/embed/${trailerKey}?autoplay=1`}
