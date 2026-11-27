@@ -50,7 +50,7 @@
 	let carouselTrailerKey = $state<string | null>(null);
 	let isLoadingCarouselTrailer = $state(false);
 
-	let isMobileSidebarOpen = $state(false);// สถานะเปิด/ปิด Sidebar บนมือถือ
+	let isMobileSidebarOpen = $state(false); // สถานะเปิด/ปิด Sidebar บนมือถือ
 	let isAnyModalOpen = $derived(
 		isModalOpen ||
 			isDetailModalOpen ||
@@ -952,18 +952,22 @@
 				onclick={openSwipeMode}
 				class="flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-gray-200 transition-all hover:border-white/25 hover:bg-white/15 hover:text-white active:scale-95"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" 
-				viewBox="0 0 24 24" 
-				fill="currentColor" 
-				class="size-6">
-  				<path fill-rule="evenodd" 
-				d="M12.963 2.286a.75.75 0 0 0-1.071-.136 
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="size-6"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M12.963 2.286a.75.75 0 0 0-1.071-.136 
 				9.742 9.742 0 0 0-3.539 6.176 7.547 7.547 
 				0 0 1-1.705-1.715.75.75 0 0 0-1.152-.082A9 
 				9 0 1 0 15.68 4.534a7.46 7.46 0 0 1-2.717-2.248ZM15.75 
 				14.25a3.75 3.75 0 1 1-7.313-1.172c.628.465 1.35.81 
-				2.133 1a5.99 5.99 0 0 1 1.925-3.546 3.75 3.75 0 0 1 3.255 3.718Z" 
-				clip-rule="evenodd" />
+				2.133 1a5.99 5.99 0 0 1 1.925-3.546 3.75 3.75 0 0 1 3.255 3.718Z"
+						clip-rule="evenodd"
+					/>
 				</svg>
 
 				<span>โหมดปัด</span>
@@ -974,14 +978,19 @@
 				onclick={() => (isWatchlistOpen = true)}
 				class="relative flex cursor-pointer items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2 text-xs font-bold text-gray-200 transition-all hover:border-white/25 hover:bg-white/15 hover:text-white active:scale-95"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" 
-				viewBox="0 0 20 20" fill="currentColor" 
-				class="size-5">
-  				<path fill-rule="evenodd" 
-				d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 20 20"
+					fill="currentColor"
+					class="size-5"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 
 				2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 
-				15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z" 
-				clip-rule="evenodd" />
+				15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
+						clip-rule="evenodd"
+					/>
 				</svg>
 				<span>คลังที่ปัดไว้</span>
 				{#if savedMovies.length > 0}
@@ -1014,16 +1023,20 @@
 				aria-label="คลังที่ปัดไว้"
 				class="relative flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-200 transition-all active:scale-95"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" 
-				viewBox="0 0 24 24" 
-				fill="currentColor" 
-				class="size-6">
-  				<path fill-rule="evenodd" 
-				d="M6.32 2.577a49.255 49.255 0 0 1 11.36 
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="size-6"
+				>
+					<path
+						fill-rule="evenodd"
+						d="M6.32 2.577a49.255 49.255 0 0 1 11.36 
 				0c1.497.174 2.57 1.46 2.57 2.93V21a.75.75 0 0 
 				1-1.085.67L12 18.089l-7.165 3.583A.75.75 0 0 1 3.75 
-				21V5.507c0-1.47 1.073-2.756 2.57-2.93Z" 
-				clip-rule="evenodd" />
+				21V5.507c0-1.47 1.073-2.756 2.57-2.93Z"
+						clip-rule="evenodd"
+					/>
 				</svg>
 
 				{#if savedMovies.length > 0}
@@ -1314,7 +1327,9 @@
 					<div
 						class="relative z-10 flex items-center justify-between border-b border-white/10 bg-white/5 px-6 py-4 backdrop-blur-md"
 					>
-						<h3 class="text-xl font-bold tracking-wide text-white drop-shadow-sm">เรื่องที่ปัดไว้</h3>
+						<h3 class="text-xl font-bold tracking-wide text-white drop-shadow-sm">
+							เรื่องที่ปัดไว้
+						</h3>
 						<button
 							type="button"
 							onclick={() => (isWatchlistOpen = false)}
@@ -1336,10 +1351,12 @@
 
 					<!-- รายชื่อหนัง -->
 					<div
-						class="relative z-10 max-h-[60vh] overflow-y-auto p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+						class="relative z-10 max-h-[60vh] [scrollbar-width:none] overflow-y-auto p-4 [&::-webkit-scrollbar]:hidden"
 					>
 						{#if savedMovies.length === 0}
-							<div class="flex flex-col items-center justify-center py-12 text-center text-gray-400">
+							<div
+								class="flex flex-col items-center justify-center py-12 text-center text-gray-400"
+							>
 								<p class="text-sm font-medium">ยังไม่ได้ปัดขวาเลือกเรื่องไหนเลยน้า</p>
 							</div>
 						{:else}
@@ -1616,7 +1633,8 @@
 						{@const genreText = getSlideGenres(movie.genre_ids)}
 
 						<div
-							class="absolute inset-0 transition-opacity duration-700 ease-out {index === currentSlide
+							class="absolute inset-0 transition-opacity duration-700 ease-out {index ===
+							currentSlide
 								? 'z-10 opacity-100'
 								: 'pointer-events-none z-0 opacity-0'}"
 						>
@@ -1650,9 +1668,7 @@
 							></div>
 
 							<!-- โครงสร้างเนื้อหา 2 ฝั่ง (ซ้อนทับบนพื้นหลังด้วย absolute inset-0) -->
-							<div
-								class="absolute inset-0 z-10 flex items-center justify-between px-16 pt-6 pb-24"
-							>
+							<div class="absolute inset-0 z-10 flex items-center justify-between px-16 pt-6 pb-24">
 								<!-- ฝั่งซ้าย: รายละเอียดเรื่อง -->
 								<div class="flex max-w-xl flex-col justify-center">
 									<!-- แถวป้ายอันดับ + คะแนน + ภาษา -->
@@ -1663,7 +1679,8 @@
 												? 'bg-gradient-to-r from-red-600 to-orange-500'
 												: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
 										>
-											TOP #{index + 1} {mediaType === 'movie' ? 'MOVIE' : 'SERIES'}
+											TOP #{index + 1}
+											{mediaType === 'movie' ? 'MOVIE' : 'SERIES'}
 										</span>
 
 										<span
@@ -1751,7 +1768,7 @@
 												<span>กำลังโหลด...</span>
 											{:else if isCarouselPlayingTrailer && index === currentSlide}
 												<span>✕</span>
-											<span>ปิดตัวอย่าง</span>
+												<span>ปิดตัวอย่าง</span>
 											{:else}
 												<svg
 													xmlns="http://www.w3.org/2000/svg"
@@ -1826,7 +1843,11 @@
 							stroke="currentColor"
 							class="h-8 w-8 transition-transform hover:scale-125"
 						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								d="M15.75 19.5 8.25 12l7.5-7.5"
+							/>
 						</svg>
 					</button>
 
@@ -2194,163 +2215,169 @@
 				</div>
 			{:else if movies.length > 0}
 				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-5">
-	{#each movies as movie, index}
-		{@const isSaved = savedMovies.some((m: any) => m.id === movie.id)}
-		{@const releaseYear = (movie.release_date || movie.first_air_date)?.split('-')[0]}
-		{@const genreLabel = getSlideGenres(movie.genre_ids)}
+					{#each movies as movie, index}
+						{@const isSaved = savedMovies.some((m: any) => m.id === movie.id)}
+						{@const releaseYear = (movie.release_date || movie.first_air_date)?.split('-')[0]}
+						{@const genreLabel = getSlideGenres(movie.genre_ids)}
 
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div
-			onclick={() => openMovieDetails(movie.id, mediaType)}
-			class="group fade-in-card relative aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 shadow-[0_10px_30px_rgba(0,0,0,0.65)] transition-all duration-500 hover:-translate-y-2 {mediaType ===
-			'movie'
-				? 'hover:border-red-500/50 hover:shadow-[0_16px_36px_rgba(239,68,68,0.28)]'
-				: 'hover:border-cyan-400/50 hover:shadow-[0_16px_36px_rgba(6,182,212,0.28)]'}"
-			style="animation-delay: {(index % 10) * 50}ms;"
-		>
-			<!-- แสงวิบวับพาดผ่านการ์ดตอน Hover (Glass Shine Sweep) -->
-			<div
-				class="pointer-events-none absolute inset-0 z-20 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full"
-			></div>
-
-			<!-- ภาพโปสเตอร์เต็มใบ -->
-			{#if movie.poster_path}
-				<img
-					src="https://image.tmdb.org/t/p/w500{movie.poster_path}"
-					alt={movie.title || movie.name}
-					class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-					loading="lazy"
-				/>
-			{:else}
-				<div
-					class="flex h-full items-center justify-center bg-neutral-900 p-4 text-center text-xs text-gray-500"
-				>
-					ไม่มีรูปภาพโปสเตอร์
-				</div>
-			{/if}
-
-			<!-- ไล่เงาดำด้านบนและด้านล่างให้อ่านตัวหนังสือชัด -->
-			<div
-				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/95 transition-opacity duration-300"
-			></div>
-			<div
-				class="pointer-events-none absolute inset-0 bg-black/30 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 group-hover:opacity-100"
-			></div>
-
-			<!-- แถบบน: ปุ่มเซฟด่วน (ซ้าย) + คะแนน IMDB (ขวา) -->
-			<div class="absolute inset-x-2.5 top-2.5 z-10 flex items-center justify-between gap-2">
-				<!-- ปุ่มเพิ่ม/ลบออกจากคลังทันที -->
-				<button
-					type="button"
-					onclick={(e) => {
-						e.stopPropagation();
-						toggleCarouselWatchlist(movie);
-					}}
-					title={isSaved ? 'อยู่ในคลังแล้ว (กดเพื่อนำออก)' : 'บันทึกเข้าคลัง'}
-					aria-label={isSaved ? 'นำออกจากคลัง' : 'บันทึกเข้าคลัง'}
-					class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 {isSaved
-						? 'border-emerald-400/50 bg-emerald-500/25 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.35)]'
-						: 'border-white/15 bg-black/50 text-white/80 hover:border-white/40 hover:bg-black/75 hover:text-white'}"
-				>
-					{#if isSaved}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							class="h-4 w-4"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					{:else}
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							viewBox="0 0 20 20"
-							fill="currentColor"
-							class="h-4 w-4"
-						>
-							<path
-								fill-rule="evenodd"
-								d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
-								clip-rule="evenodd"
-							/>
-						</svg>
-					{/if}
-				</button>
-
-				<!-- ป้ายคะแนน IMDB -->
-				<div
-					class="flex items-center gap-1 rounded-xl border border-white/15 bg-black/55 px-2.5 py-1 text-[11px] font-extrabold text-yellow-400 shadow-sm backdrop-blur-md"
-				>
-					<span>⭐</span>
-					<span>{movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
-				</div>
-			</div>
-
-			<!-- แถบข้อมูลด้านล่าง (เลื่อนขยายโชว์เรื่องย่อและปุ่มกดตอน Hover) -->
-			<div class="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end p-3.5 sm:p-4">
-				<!-- ปีที่ฉาย + หมวดหมู่ย่อ -->
-				<div class="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-gray-300">
-					{#if releaseYear}
-						<span class="rounded-md border border-white/15 bg-white/10 px-1.5 py-0.5 backdrop-blur-sm">
-							{releaseYear}
-						</span>
-					{/if}
-					{#if genreLabel}
-						<span class="line-clamp-1 text-gray-300/90">{genreLabel.split(' • ')[0]}</span>
-					{/if}
-				</div>
-
-				<!-- ชื่อเรื่อง -->
-				<h3
-					class="line-clamp-1 text-sm font-extrabold text-white drop-shadow-md transition-colors duration-300 group-hover:line-clamp-2 sm:text-base {mediaType ===
-					'movie'
-						? 'group-hover:text-red-400'
-						: 'group-hover:text-cyan-300'}"
-					title={movie.title || movie.name}
-				>
-					{movie.title || movie.name}
-				</h3>
-
-				<!-- ส่วนขยายตอน Hover: เรื่องย่อ + ปุ่มดูรายละเอียด -->
-				<div
-					class="grid grid-rows-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:mt-2 group-hover:grid-rows-[1fr] group-hover:opacity-100"
-				>
-					<div class="overflow-hidden">
-						<p class="mb-2.5 line-clamp-2 text-[11px] leading-relaxed text-gray-300">
-							{movie.overview || 'ยังไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
-						</p>
-
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<div
-							class="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-extrabold text-white shadow-md transition-colors {mediaType ===
+							onclick={() => openMovieDetails(movie.id, mediaType)}
+							class="group fade-in-card relative aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 shadow-[0_10px_30px_rgba(0,0,0,0.65)] transition-all duration-500 hover:-translate-y-2 {mediaType ===
 							'movie'
-								? 'bg-gradient-to-r from-red-600 to-orange-500'
-								: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
+								? 'hover:border-red-500/50 hover:shadow-[0_16px_36px_rgba(239,68,68,0.28)]'
+								: 'hover:border-cyan-400/50 hover:shadow-[0_16px_36px_rgba(6,182,212,0.28)]'}"
+							style="animation-delay: {(index % 10) * 50}ms;"
 						>
-							<span>ดูรายละเอียด</span>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 20 20"
-								fill="currentColor"
-								class="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
-							>
-								<path
-									fill-rule="evenodd"
-									d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z"
-									clip-rule="evenodd"
+							<!-- แสงวิบวับพาดผ่านการ์ดตอน Hover (Glass Shine Sweep) -->
+							<div
+								class="pointer-events-none absolute inset-0 z-20 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full"
+							></div>
+
+							<!-- ภาพโปสเตอร์เต็มใบ -->
+							{#if movie.poster_path}
+								<img
+									src="https://image.tmdb.org/t/p/w500{movie.poster_path}"
+									alt={movie.title || movie.name}
+									class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+									loading="lazy"
 								/>
-							</svg>
+							{:else}
+								<div
+									class="flex h-full items-center justify-center bg-neutral-900 p-4 text-center text-xs text-gray-500"
+								>
+									ไม่มีรูปภาพโปสเตอร์
+								</div>
+							{/if}
+
+							<!-- ไล่เงาดำด้านบนและด้านล่างให้อ่านตัวหนังสือชัด -->
+							<div
+								class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/95 transition-opacity duration-300"
+							></div>
+							<div
+								class="pointer-events-none absolute inset-0 bg-black/30 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 group-hover:opacity-100"
+							></div>
+
+							<!-- แถบบน: ปุ่มเซฟด่วน (ซ้าย) + คะแนน IMDB (ขวา) -->
+							<div
+								class="absolute inset-x-2.5 top-2.5 z-10 flex items-center justify-between gap-2"
+							>
+								<!-- ปุ่มเพิ่ม/ลบออกจากคลังทันที -->
+								<button
+									type="button"
+									onclick={(e) => {
+										e.stopPropagation();
+										toggleCarouselWatchlist(movie);
+									}}
+									title={isSaved ? 'อยู่ในคลังแล้ว (กดเพื่อนำออก)' : 'บันทึกเข้าคลัง'}
+									aria-label={isSaved ? 'นำออกจากคลัง' : 'บันทึกเข้าคลัง'}
+									class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 {isSaved
+										? 'border-emerald-400/50 bg-emerald-500/25 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.35)]'
+										: 'border-white/15 bg-black/50 text-white/80 hover:border-white/40 hover:bg-black/75 hover:text-white'}"
+								>
+									{#if isSaved}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											class="h-4 w-4"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									{:else}
+										<svg
+											xmlns="http://www.w3.org/2000/svg"
+											viewBox="0 0 20 20"
+											fill="currentColor"
+											class="h-4 w-4"
+										>
+											<path
+												fill-rule="evenodd"
+												d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
+												clip-rule="evenodd"
+											/>
+										</svg>
+									{/if}
+								</button>
+
+								<!-- ป้ายคะแนน IMDB -->
+								<div
+									class="flex items-center gap-1 rounded-xl border border-white/15 bg-black/55 px-2.5 py-1 text-[11px] font-extrabold text-yellow-400 shadow-sm backdrop-blur-md"
+								>
+									<span>⭐</span>
+									<span>{movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
+								</div>
+							</div>
+
+							<!-- แถบข้อมูลด้านล่าง (เลื่อนขยายโชว์เรื่องย่อและปุ่มกดตอน Hover) -->
+							<div class="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end p-3.5 sm:p-4">
+								<!-- ปีที่ฉาย + หมวดหมู่ย่อ -->
+								<div
+									class="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-gray-300"
+								>
+									{#if releaseYear}
+										<span
+											class="rounded-md border border-white/15 bg-white/10 px-1.5 py-0.5 backdrop-blur-sm"
+										>
+											{releaseYear}
+										</span>
+									{/if}
+									{#if genreLabel}
+										<span class="line-clamp-1 text-gray-300/90">{genreLabel.split(' • ')[0]}</span>
+									{/if}
+								</div>
+
+								<!-- ชื่อเรื่อง -->
+								<h3
+									class="line-clamp-1 text-sm font-extrabold text-white drop-shadow-md transition-colors duration-300 group-hover:line-clamp-2 sm:text-base {mediaType ===
+									'movie'
+										? 'group-hover:text-red-400'
+										: 'group-hover:text-cyan-300'}"
+									title={movie.title || movie.name}
+								>
+									{movie.title || movie.name}
+								</h3>
+
+								<!-- ส่วนขยายตอน Hover: เรื่องย่อ + ปุ่มดูรายละเอียด -->
+								<div
+									class="grid grid-rows-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:mt-2 group-hover:grid-rows-[1fr] group-hover:opacity-100"
+								>
+									<div class="overflow-hidden">
+										<p class="mb-2.5 line-clamp-2 text-[11px] leading-relaxed text-gray-300">
+											{movie.overview || 'ยังไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
+										</p>
+
+										<div
+											class="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-extrabold text-white shadow-md transition-colors {mediaType ===
+											'movie'
+												? 'bg-gradient-to-r from-red-600 to-orange-500'
+												: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
+										>
+											<span>ดูรายละเอียด</span>
+											<svg
+												xmlns="http://www.w3.org/2000/svg"
+												viewBox="0 0 20 20"
+												fill="currentColor"
+												class="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+											>
+												<path
+													fill-rule="evenodd"
+													d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z"
+													clip-rule="evenodd"
+												/>
+											</svg>
+										</div>
+									</div>
+								</div>
+							</div>
 						</div>
-					</div>
+					{/each}
 				</div>
-			</div>
-		</div>
-	{/each}
-</div>
 
 				<!-- Pagination -->
 				<div class="my-8 flex flex-wrap items-center justify-center gap-3 px-4 md:my-10 md:gap-4">
@@ -2428,223 +2455,374 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-md transition-all duration-300"
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-md transition-all duration-300"
 		onclick={(e) => {
 			if (e.target === e.currentTarget) closeRandomModal();
 		}}
 	>
-		<!-- ตัวกล่อง Modal -->
-		<div
-			class="animate-in fade-in zoom-in relative w-full max-w-xl
-            overflow-hidden rounded-3xl border border-white/10 bg-white/5
-            shadow-[0_8px_32px_rgba(0,0,0,0.5)] backdrop-blur-2xl duration-200
-            {isShaking ? 'animate-shake' : ''}"
-		>
-			<!-- ปุ่มปิด X มุมขวาบน (เฉพาะมือถือ) -->
-			<button
-				type="button"
-				onclick={closeRandomModal}
-				class="absolute top-3 right-3 z-50 flex h-10 w-10 cursor-pointer
-                items-center justify-center rounded-full bg-black/50 text-white
-                backdrop-blur-sm transition-all hover:bg-black/70 active:scale-95 md:hidden"
-				aria-label="Close modal"
-			>
-				<svg
-					xmlns="http://www.w3.org/2000/svg"
-					fill="none"
-					viewBox="0 0 24 24"
-					stroke-width="2.5"
-					stroke="currentColor"
-					class="size-5"
-				>
-					<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-				</svg>
-			</button>
+		<!-- กล่องครอบ Modal + แสง Glow รอบกรอบตามโหมด -->
+		<div class="relative w-full max-w-2xl {isShaking ? 'animate-shake' : ''}">
+			<div
+				class="pointer-events-none absolute -inset-1.5 rounded-[2rem] opacity-50 blur-xl transition-colors duration-500 {mediaType ===
+				'movie'
+					? 'bg-gradient-to-r from-red-600/40 via-orange-500/20 to-amber-500/40'
+					: 'bg-gradient-to-r from-cyan-500/40 via-blue-600/20 to-indigo-500/40'}"
+			></div>
 
-			<div class="flex flex-col p-6 md:p-8">
-				<!-- เล่นตัวอย่าง YouTube -->
-				{#if isPlayingRandomMovieTrailer && randomTrailerKey}
-					<div
-						class="relative isolate mb-6 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl"
-						style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);"
+			<!-- ชุดปุ่มมุมขวาบน (ย้ายออกมาอยู่นอกกล่องเลื่อน เพื่อให้ลอยค้างตลอดเวลาบนมือถือ) -->
+			<div class="absolute top-4 right-4 z-30 flex items-center gap-2">
+				{#if randomMovie && !isPosterReelSpinning}
+					{@const isSaved = savedMovies.some((m: any) => m.id === randomMovie.id)}
+					<button
+						type="button"
+						onclick={() => toggleCarouselWatchlist(randomMovie)}
+						title={isSaved ? 'อยู่ในคลังแล้ว' : 'บันทึกเข้าคลัง'}
+						class="flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3.5 text-xs font-bold backdrop-blur-md transition-all active:scale-95 {isSaved
+							? 'border-emerald-400/40 bg-emerald-500/20 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.25)]'
+							: 'border-white/15 bg-black/70 text-gray-200 hover:border-white/35 hover:bg-black/85 hover:text-white'}"
 					>
-						<iframe
-							src={`https://www.youtube.com/embed/${randomTrailerKey}?autoplay=1`}
-							title="Random Trailer"
-							class="h-full w-full rounded-2xl border-0"
-							allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-							allowfullscreen
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+							class="h-3.5 w-3.5"
 						>
-						</iframe>
+							{#if isSaved}
+								<path
+									fill-rule="evenodd"
+									d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+									clip-rule="evenodd"
+								/>
+							{:else}
+								<path
+									fill-rule="evenodd"
+									d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
+									clip-rule="evenodd"
+								/>
+							{/if}
+						</svg>
+						<span>{isSaved ? 'บันทึกแล้ว' : 'เก็บไว้ดู'}</span>
+					</button>
+				{/if}
 
-						<button
-							type="button"
-							onclick={() => (isPlayingRandomMovieTrailer = false)}
-							class="absolute top-2 right-2 z-10 cursor-pointer rounded-full bg-black/70 px-3 py-1
-                            text-xs font-bold text-white backdrop-blur-sm hover:bg-black"
-						>
-							✕ ปิดตัวอย่าง
-						</button>
+				<button
+					type="button"
+					onclick={closeRandomModal}
+					class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-black/70 text-gray-300 backdrop-blur-md transition-all hover:rotate-90 hover:border-white/35 hover:bg-white/20 hover:text-white active:scale-95"
+					aria-label="Close modal"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.5"
+						stroke="currentColor"
+						class="size-4"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+
+			<!-- ตัวกล่อง Modal หลัก (ส่วนที่เลื่อนขึ้นลงได้) -->
+			<div
+				class="animate-in fade-in zoom-in relative max-h-[90vh] w-full [scrollbar-width:none] overflow-y-auto rounded-3xl border border-white/15 bg-neutral-950/85 shadow-[0_20px_50px_rgba(0,0,0,0.8)] backdrop-blur-2xl duration-200 [&::-webkit-scrollbar]:hidden"
+			>
+				<!-- ลูกเล่น 1: ภาพพื้นหลังเบลอเปลี่ยนโทนสีตามโปสเตอร์เรื่องที่สุ่มได้ -->
+				{#if randomMovie && !isPosterReelSpinning && (randomMovie.backdrop_path || randomMovie.poster_path)}
+					<div class="pointer-events-none absolute inset-0 overflow-hidden opacity-25">
+						<img
+							src="https://image.tmdb.org/t/p/w500{randomMovie.backdrop_path ||
+								randomMovie.poster_path}"
+							alt=""
+							class="h-full w-full scale-125 object-cover blur-2xl transition-all duration-700"
+						/>
+						<div
+							class="absolute inset-0 bg-gradient-to-b from-neutral-950/40 via-neutral-950/80 to-neutral-950"
+						></div>
 					</div>
 				{/if}
 
-				<div class="flex flex-col gap-6 md:flex-row">
-					<!-- โปสเตอร์ใน Modal -->
-					<div
-						class="mx-auto aspect-[2/3] w-36 flex-shrink-0 overflow-hidden rounded-xl border border-white/10 bg-black/40 shadow-xl md:w-48"
-					>
-						{#if isPosterReelSpinning && spinningPosterMovies.length > 0}
-							<div class="relative h-full w-full overflow-hidden">
-								<div
-									class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
-									style="animation-duration: 2.5s;"
-								>
-									{#each spinningPosterMovies as dummyMovie}
-										<img
-											src="https://image.tmdb.org/t/p/w500{dummyMovie.poster_path}"
-											alt="Loading Poster"
-											class="h-full w-full flex-shrink-0 object-cover"
-										/>
-									{/each}
-								</div>
-								<div
-									class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/50"
-								></div>
-							</div>
-						{:else if randomMovie}
-							{#if randomMovie.poster_path}
-								<img
-									src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
-									alt={randomMovie.title || randomMovie.name}
-									class="h-full w-full object-cover"
-								/>
-							{:else}
-								<div class="flex h-full items-center justify-center text-xs text-gray-500">
-									ไม่มีรูปภาพ
-								</div>
-							{/if}
-						{:else}
-							<div
-								class="flex h-full animate-pulse items-center justify-center text-xs text-gray-500"
+				<!-- เว้นระยะด้านบน (pt-16) กันปุ่มมุมขวาบนบังรูปหรือวิดีโอ -->
+				<div class="relative z-10 flex flex-col px-5 pt-16 pb-5 md:px-7 md:pt-14 md:pb-7">
+					<!-- โซนเล่นตัวอย่าง YouTube -->
+					{#if isPlayingRandomMovieTrailer && randomTrailerKey}
+						<div
+							class="relative isolate mb-6 aspect-video w-full translate-z-0 transform overflow-hidden rounded-2xl border border-white/15 bg-black shadow-2xl"
+							style="mask-image: radial-gradient(white, black); -webkit-mask-image: -webkit-radial-gradient(white, black);"
+						>
+							<iframe
+								src={`https://www.youtube.com/embed/${randomTrailerKey}?autoplay=1`}
+								title="Random Trailer"
+								class="h-full w-full rounded-2xl border-0"
+								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+								allowfullscreen
+							></iframe>
+
+							<button
+								type="button"
+								onclick={() => (isPlayingRandomMovieTrailer = false)}
+								class="absolute top-2.5 right-2.5 z-10 cursor-pointer rounded-full border border-white/20 bg-black/75 px-3 py-1 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-black"
 							>
-								กำลังสุ่ม...
-							</div>
-						{/if}
-					</div>
+								✕ ปิดตัวอย่าง
+							</button>
+						</div>
+					{/if}
 
-					<!-- รายละเอียดหนัง/ซีรีส์ -->
-					<div class="flex flex-grow flex-col justify-between text-left">
-						{#if randomMovie}
-							<div>
-								<div class="mb-3 flex items-start justify-between">
-									<span
-										class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-sm font-bold text-yellow-300 backdrop-blur-md"
-									>
-										⭐ IMDB {randomMovie.vote_average ? randomMovie.vote_average.toFixed(1) : 'N/A'}
-									</span>
-								</div>
-								<h3 class="mb-2 text-2xl font-bold text-white drop-shadow-md">
-									{randomMovie.title || randomMovie.name}
-								</h3>
-								<p class="mb-4 max-h-36 overflow-y-auto text-sm leading-relaxed text-gray-300">
-									{randomMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับเรื่องนี้'}
-								</p>
-							</div>
-
-							<!-- ส่วนแสดงแพลตฟอร์มสตรีมมิ่ง -->
-							{#if randomMovieProviders.length > 0}
+					<div class="flex flex-col gap-6 md:flex-row">
+						<!-- ลูกเล่น 2: กรอบโปสเตอร์ทรงตู้สล็อต + กดที่รูปเพื่อเล่นตัวอย่างได้ -->
+						<div class="relative mx-auto w-40 flex-shrink-0 md:mx-0 md:w-48">
+							<!-- เข็มชี้ซ้าย-ขวาตอนวงล้อหมุน -->
+							{#if isPosterReelSpinning}
 								<div
-									class="mb-4 rounded-xl border border-white/10 bg-black/20 p-3 backdrop-blur-sm"
+									class="absolute top-1/2 -left-2.5 z-20 -translate-y-1/2 text-xs text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]"
 								>
-									<h4 class="mb-2 text-xs font-semibold text-gray-400">
-										อ๋อเรื่องนี้อยู่ในแพลตฟอร์ม
-									</h4>
-									<div class="flex flex-wrap gap-2">
-										{#each randomMovieProviders as provider}
-											<a
-												href={getStreamingUrl(provider, randomMovie)}
-												target="_blank"
-												rel="noopener noreferrer"
-												class="flex cursor-pointer items-center gap-2 rounded-lg border border-white/10 bg-white/10 px-2 py-1 pr-3 shadow-sm transition-all hover:scale-105 hover:border-white/30 hover:bg-white/20 active:scale-95"
-											>
-												<img
-													src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
-													alt={provider.provider_name}
-													class="h-6 w-6 rounded-md object-cover shadow-sm"
-												/>
-												<span class="text-xs font-bold text-white">{provider.provider_name}</span>
-											</a>
-										{/each}
-									</div>
+									▶
+								</div>
+								<div
+									class="absolute top-1/2 -right-2.5 z-20 -translate-y-1/2 text-xs text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.9)]"
+								>
+									◀
 								</div>
 							{/if}
 
-							<!-- ปุ่มกดดูตัวอย่าง -->
-							{#if randomTrailerKey && !isPlayingRandomMovieTrailer}
-								<button
-									type="button"
-									onclick={() => (isPlayingRandomMovieTrailer = true)}
-									class="mb-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl
-                                    bg-red-600/90 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/30 transition-all
-                                    hover:bg-red-600 active:scale-95"
-								>
-									<span>
+							<div
+								onclick={() => {
+									if (!isPosterReelSpinning && randomTrailerKey && !isPlayingRandomMovieTrailer) {
+										isPlayingRandomMovieTrailer = true;
+									}
+								}}
+								class="group relative aspect-[2/3] w-full overflow-hidden rounded-2xl border-2 bg-black/50 shadow-2xl transition-all duration-300 {isPosterReelSpinning
+									? 'border-amber-400/80 shadow-[0_0_25px_rgba(251,191,36,0.3)]'
+									: randomTrailerKey
+										? 'cursor-pointer border-white/20 hover:scale-[1.02] hover:border-white/40'
+										: 'border-white/15'}"
+							>
+								{#if isPosterReelSpinning && spinningPosterMovies.length > 0}
+									<div class="relative h-full w-full overflow-hidden">
+										<div
+											class="animate-poster-reel absolute top-0 flex h-full w-full flex-col"
+											style="animation-duration: 2.5s;"
+										>
+											{#each spinningPosterMovies as dummyMovie}
+												<img
+													src="https://image.tmdb.org/t/p/w500{dummyMovie.poster_path}"
+													alt="Loading Poster"
+													class="h-full w-full flex-shrink-0 object-cover"
+												/>
+											{/each}
+										</div>
+										<!-- เงาโค้งบน-ล่าง + เส้นเล็งกลางวงล้อ -->
+										<div
+											class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/70 via-transparent to-black/70"
+										></div>
+										<div
+											class="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-amber-400/70 shadow-[0_0_10px_rgba(251,191,36,1)]"
+										></div>
+									</div>
+								{:else if randomMovie}
+									{#if randomMovie.poster_path}
+										<img
+											src="https://image.tmdb.org/t/p/w500{randomMovie.poster_path}"
+											alt={randomMovie.title || randomMovie.name}
+											class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+										/>
+									{:else}
+										<div class="flex h-full items-center justify-center text-xs text-gray-500">
+											ไม่มีรูปภาพ
+										</div>
+									{/if}
+
+									<!-- แสงวิบวับพาดผ่านโปสเตอร์ตอน Hover -->
+									<div
+										class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full"
+									></div>
+
+									<!-- ปุ่ม Play ลอยขึ้นมาเมื่อเอาเมาส์ชี้โปสเตอร์ (ถ้ามี Trailer) -->
+									{#if randomTrailerKey && !isPlayingRandomMovieTrailer}
+										<div
+											class="absolute inset-0 flex flex-col items-center justify-center bg-black/45 opacity-0 backdrop-blur-[2px] transition-opacity duration-300 group-hover:opacity-100"
+										>
+											<div
+												class="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 text-white shadow-[0_0_20px_rgba(220,38,38,0.8)] transition-transform duration-300 group-hover:scale-110"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													viewBox="0 0 24 24"
+													fill="currentColor"
+													class="ml-0.5 h-6 w-6"
+												>
+													<path
+														fill-rule="evenodd"
+														d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z"
+														clip-rule="evenodd"
+													/>
+												</svg>
+											</div>
+											<span class="mt-2 text-[11px] font-bold text-white drop-shadow">
+												เล่นตัวอย่าง
+											</span>
+										</div>
+									{/if}
+								{:else}
+									<div
+										class="flex h-full animate-pulse items-center justify-center text-xs text-gray-500"
+									>
+										กำลังสุ่ม...
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<!-- รายละเอียดหนัง/ซีรีส์ -->
+						<div class="flex flex-grow flex-col justify-between text-left">
+							{#if randomMovie && !isPosterReelSpinning}
+								<div>
+									<!-- ป้ายคะแนน IMDB + ปีที่ฉาย -->
+									<div class="mb-2.5 flex flex-wrap items-center gap-2">
+										<span
+											class="rounded-full border border-yellow-400/30 bg-yellow-500/20 px-3 py-1 text-xs font-extrabold text-yellow-300 backdrop-blur-md"
+										>
+											⭐ IMDB {randomMovie.vote_average
+												? randomMovie.vote_average.toFixed(1)
+												: 'N/A'}
+										</span>
+
+										{#if randomMovie.release_date || randomMovie.first_air_date}
+											<span
+												class="rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-xs font-semibold text-gray-200"
+											>
+												{(randomMovie.release_date || randomMovie.first_air_date)?.slice(0, 4)}
+											</span>
+										{/if}
+									</div>
+
+									<h3 class="mb-2 text-2xl font-black tracking-tight text-white drop-shadow-md">
+										{randomMovie.title || randomMovie.name}
+									</h3>
+
+									<p
+										class="mb-4 max-h-32 [scrollbar-width:none] overflow-y-auto pr-1 text-sm leading-relaxed text-gray-300 [&::-webkit-scrollbar]:hidden"
+									>
+										{randomMovie.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อสำหรับเรื่องนี้'}
+									</p>
+								</div>
+
+								<!-- ส่วนแสดงแพลตฟอร์มสตรีมมิ่ง -->
+								{#if randomMovieProviders.length > 0}
+									<div
+										class="mb-4 rounded-2xl border border-white/10 bg-white/[0.04] p-3 backdrop-blur-sm"
+									>
+										<h4 class="mb-2 text-[11px] font-bold tracking-wide text-gray-400">
+											อ๋อเรื่องนี้อยู่ในแพลตฟอร์ม
+										</h4>
+										<div class="flex flex-wrap gap-2">
+											{#each randomMovieProviders as provider}
+												<a
+													href={getStreamingUrl(provider, randomMovie)}
+													target="_blank"
+													rel="noopener noreferrer"
+													class="group/prov flex cursor-pointer items-center gap-2 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 shadow-sm transition-all hover:scale-105 hover:border-white/35 hover:bg-white/15 active:scale-95"
+												>
+													<img
+														src={`https://image.tmdb.org/t/p/w92${provider.logo_path}`}
+														alt={provider.provider_name}
+														class="h-5 w-5 rounded-md object-cover shadow-sm"
+													/>
+													<span class="text-xs font-bold text-white">{provider.provider_name}</span>
+													<span
+														class="text-[10px] text-gray-400 transition-transform group-hover/prov:translate-x-0.5 group-hover/prov:-translate-y-0.5 group-hover/prov:text-white"
+													>
+														↗
+													</span>
+												</a>
+											{/each}
+										</div>
+									</div>
+								{/if}
+
+								<!-- ปุ่มกดดูตัวอย่าง -->
+								{#if randomTrailerKey && !isPlayingRandomMovieTrailer}
+									<button
+										type="button"
+										onclick={() => (isPlayingRandomMovieTrailer = true)}
+										class="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-red-400/30 bg-red-600/85 py-2.5 text-sm font-bold text-white shadow-lg shadow-red-600/25 transition-all hover:bg-red-600 active:scale-95"
+									>
 										<svg
 											xmlns="http://www.w3.org/2000/svg"
 											width="16"
 											height="16"
 											fill="currentColor"
-											class="bi bi-youtube"
 											viewBox="0 0 16 16"
 										>
 											<path
 												d="M8.051 1.999h.089c.822.003 4.987.033 6.11.335a2.01 2.01 0 0 1 1.415 1.42c.101.38.172.883.22 1.402l.01.104.022.26.008.104c.065.914.073 1.77.074 1.957v.075c-.001.194-.01 1.108-.082 2.06l-.008.105-.009.104c-.05.572-.124 1.14-.235 1.558a2.01 2.01 0 0 1-1.415 1.42c-1.16.312-5.569.334-6.18.335h-.142c-.309 0-1.587-.006-2.927-.052l-.17-.006-.087-.004-.171-.007-.171-.007c-1.11-.049-2.167-.128-2.654-.26a2.01 2.01 0 0 1-1.415-1.419c-.111-.417-.185-.986-.235-1.558L.09 9.82l-.008-.104A31 31 0 0 1 0 7.68v-.123c.002-.215.01-.958.064-1.778l.007-.103.003-.052.008-.104.022-.26.01-.104c.048-.519.119-1.023.22-1.402a2.01 2.01 0 0 1 1.415-1.42c.487-.13 1.544-.21 2.654-.26l.17-.007.172-.006.086-.003.171-.007A100 100 0 0 1 7.858 2zM6.4 5.209v4.818l4.157-2.408z"
 											/>
 										</svg>
-									</span>
-									<span>ชมตัวอย่าง{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'} (Trailer)</span>
-								</button>
+										<span>ชมตัวอย่าง{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'} (Trailer)</span>
+									</button>
+								{/if}
+							{:else}
+								<!-- สถานะระหว่างวงล้อกำลังหมุน -->
+								<div class="flex h-full flex-col justify-center py-6">
+									<p class="mb-2 animate-pulse text-lg font-black text-white">
+										กำลังสุ่มหา{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}ให้ ใจเย็น ๆ
+									</p>
+									<p class="mb-5 text-xs text-gray-400">ลุ้นกันว่าวันนี้จะได้ดูเรื่องอะไร...</p>
+									<div class="space-y-2.5">
+										<div class="h-3 w-3/4 animate-pulse rounded-full bg-white/10"></div>
+										<div class="h-3 w-full animate-pulse rounded-full bg-white/10"></div>
+										<div class="h-3 w-1/2 animate-pulse rounded-full bg-white/10"></div>
+									</div>
+								</div>
 							{/if}
-						{:else}
-							<div class="flex h-full items-center justify-center py-10">
-								<p class="animate-pulse text-lg font-bold text-white">
-									กำลังสุ่มหา{mediaType === 'movie' ? 'ภาพยนตร์' : 'ซีรีส์'}ให้ ใจเย็น ๆ
-								</p>
-							</div>
-						{/if}
-
-						<!-- ปุ่มสุ่มใหม่ -->
-						<div class="mt-2 flex gap-3">
-							<button
-								onclick={() => {
-									isPlayingRandomMovieTrailer = false;
-									pickRandomMovie();
-								}}
-								class="relative flex-1 cursor-pointer rounded-2xl
-    							bg-gradient-to-b from-red-500 to-red-700 px-4 py-3.5
-    							text-sm font-extrabold text-white
-    							shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_6px_rgba(0,0,0,0.3),0_10px_20px_rgba(229,9,20,0.4)]
-    							transition-all duration-200
-    							hover:from-red-400 hover:to-red-600 hover:shadow-[inset_0_2px_4px_rgba(255,255,255,0.5),inset_0_-4px_6px_rgba(0,0,0,0.3),0_12px_25px_rgba(229,9,20,0.6)]
-    							active:translate-y-1 active:shadow-[inset_0_2px_2px_rgba(0,0,0,0.3),0_4px_10px_rgba(229,9,20,0.3)]
-    							{isShaking ? 'animate-shake' : ''}"
-							>
-								<span
-									class="relative z-10 flex items-center justify-center gap-2 drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"
-								>
-									<span>ไม่ถูกใจหรอ? สุ่มใหม่อีกที!</span>
-								</span>
-							</button>
-
-							<button
-								onclick={closeRandomModal}
-								class="cursor-pointer rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg
-                                backdrop-blur-md transition-all hover:bg-white/10 hover:text-white active:scale-95"
-							>
-								ปิด
-							</button>
 						</div>
 					</div>
+				</div>
+
+				<!-- ลูกเล่น 3: เส้นรอยปรุฉีกตั๋วหนัง (Ticket Stub Divider) -->
+				<div class="relative z-10 flex items-center">
+					<div class="h-6 w-6 -translate-x-3 rounded-full border border-white/15 bg-black/90"></div>
+					<div class="flex-1 border-t-2 border-dashed border-white/15"></div>
+					<div class="h-6 w-6 translate-x-3 rounded-full border border-white/15 bg-black/90"></div>
+				</div>
+
+				<!-- ส่วนหางตั๋ว: ปุ่มสุ่มใหม่ 3D + ปุ่มปิด -->
+				<div class="relative z-10 flex gap-3 bg-white/[0.02] px-5 py-4 md:px-7">
+					<button
+						type="button"
+						disabled={isPosterReelSpinning}
+						onclick={() => {
+							isPlayingRandomMovieTrailer = false;
+							pickRandomMovie();
+						}}
+						class="group relative flex-1 cursor-pointer overflow-hidden rounded-2xl px-4 py-3.5 text-sm font-extrabold text-white transition-all duration-200 active:translate-y-1 disabled:cursor-not-allowed disabled:opacity-50 {mediaType ===
+						'movie'
+							? 'bg-gradient-to-b from-red-500 to-red-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_6px_rgba(0,0,0,0.3),0_10px_20px_rgba(229,9,20,0.4)] hover:from-red-400 hover:to-red-600'
+							: 'bg-gradient-to-b from-cyan-500 to-blue-700 shadow-[inset_0_2px_4px_rgba(255,255,255,0.4),inset_0_-4px_6px_rgba(0,0,0,0.3),0_10px_20px_rgba(6,182,212,0.4)] hover:from-cyan-400 hover:to-blue-600'} {isShaking
+							? 'animate-shake'
+							: ''}"
+					>
+						<!-- แสงวิบวับพาดผ่านปุ่มตอน Hover -->
+						<div
+							class="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-700 group-hover:translate-x-full"
+						></div>
+						<span
+							class="relative z-10 flex items-center justify-center gap-2 drop-shadow-[0_2px_2px_rgba(0,0,0,0.3)]"
+						>
+							<span
+								>{isPosterReelSpinning ? 'กำลังหมุนวงล้อ...' : 'ไม่ถูกใจหรอ? สุ่มใหม่อีกที!'}</span
+							>
+						</span>
+					</button>
+
+					<button
+						type="button"
+						onclick={closeRandomModal}
+						class="cursor-pointer rounded-2xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-gray-300 shadow-lg backdrop-blur-md transition-all hover:bg-white/15 hover:text-white active:scale-95"
+					>
+						ปิด
+					</button>
 				</div>
 			</div>
 		</div>
@@ -2710,7 +2888,7 @@
 
 					<!-- ข้อมูลด้านขวา (เพิ่ม md:overflow-y-auto ให้เลื่อนเฉพาะฝั่งขวาบน Desktop) -->
 					<div
-						class="flex flex-col p-6 [scrollbar-width:none] [-ms-overflow-style:none] md:w-2/3 md:overflow-y-auto md:p-8 [&::-webkit-scrollbar]:hidden"
+						class="flex [scrollbar-width:none] flex-col p-6 [-ms-overflow-style:none] md:w-2/3 md:overflow-y-auto md:p-8 [&::-webkit-scrollbar]:hidden"
 					>
 						<div class="mb-2 flex items-center justify-between">
 							<span
@@ -2991,262 +3169,263 @@
 {/if}
 
 <!-- ==================== SWIPE MODE MODAL ==================== -->
-		{#if isSwipeModeOpen}
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				transition:fade={{ duration: 200 }}
-				onmousemove={handleDragMove}
-				onmouseup={handleDragEnd}
-				onclick={(e) => {
-					if (e.target === e.currentTarget) {
+{#if isSwipeModeOpen}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<div
+		transition:fade={{ duration: 200 }}
+		onmousemove={handleDragMove}
+		onmouseup={handleDragEnd}
+		onclick={(e) => {
+			if (e.target === e.currentTarget) {
+				isSwipeModeOpen = false;
+				isDragging = false;
+				currentX = 0;
+			}
+		}}
+		class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 px-4 py-6 backdrop-blur-xl select-none"
+	>
+		<!-- แถบด้านบน: หัวข้อ + ปุ่มเปิดคลัง + ปุ่มปิด -->
+		<div class="mb-4 flex w-full max-w-sm items-center justify-between">
+			<div class="flex items-center gap-2">
+				<span
+					class="rounded-full px-3 py-1 text-xs font-black tracking-wider text-white uppercase {mediaType ===
+					'movie'
+						? 'bg-gradient-to-r from-red-500 to-orange-500'
+						: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
+				>
+					Swipe {mediaType === 'movie' ? 'Movies' : 'Series'}
+				</span>
+			</div>
+
+			<div class="flex items-center gap-2">
+				<!-- ปุ่มดูคลังที่ปัดไว้ -->
+				<button
+					type="button"
+					onclick={() => (isWatchlistOpen = true)}
+					class="flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-95"
+				>
+					<span>คลังที่ปัดไว้</span>
+					<span class="py-0.2 rounded-full bg-purple-500 px-1.5 text-[11px] font-black">
+						{savedMovies.length}
+					</span>
+				</button>
+
+				<!-- ปุ่มปิดโหมดปัด -->
+				<button
+					type="button"
+					onclick={() => {
 						isSwipeModeOpen = false;
 						isDragging = false;
 						currentX = 0;
-					}
-				}}
-				class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 px-4 py-6 backdrop-blur-xl select-none"
-			>
-				<!-- แถบด้านบน: หัวข้อ + ปุ่มเปิดคลัง + ปุ่มปิด -->
-				<div class="mb-4 flex w-full max-w-sm items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span
-							class="rounded-full px-3 py-1 text-xs font-black tracking-wider text-white uppercase {mediaType ===
-							'movie'
-								? 'bg-gradient-to-r from-red-500 to-orange-500'
-								: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
-						>
-							Swipe {mediaType === 'movie' ? 'Movies' : 'Series'}
-						</span>
-					</div>
+					}}
+					aria-label="ปิดโหมดปัด"
+					class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-white/10 text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.5"
+						stroke="currentColor"
+						class="h-4 w-4"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+					</svg>
+				</button>
+			</div>
+		</div>
 
-					<div class="flex items-center gap-2">
-						<!-- ปุ่มดูคลังที่ปัดไว้ -->
-						<button
-							type="button"
-							onclick={() => (isWatchlistOpen = true)}
-							class="flex cursor-pointer items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-xs font-bold text-white backdrop-blur-md transition-all hover:bg-white/20 active:scale-95"
-						>
-							<span>คลังที่ปัดไว้</span>
-							<span class="rounded-full bg-purple-500 px-1.5 py-0.2 text-[11px] font-black">
-								{savedMovies.length}
-							</span>
-						</button>
-
-						<!-- ปุ่มปิดโหมดปัด -->
-						<button
-							type="button"
-							onclick={() => {
-								isSwipeModeOpen = false;
-								isDragging = false;
-								currentX = 0;
-							}}
-							aria-label="ปิดโหมดปัด"
-							class="flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-white/15 bg-white/10 text-gray-300 transition-all hover:bg-white/20 hover:text-white active:scale-95"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2.5"
-								stroke="currentColor"
-								class="h-4 w-4"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-							</svg>
-						</button>
-					</div>
+		<!-- พื้นที่กองการ์ด -->
+		<div class="relative flex h-[470px] w-full max-w-sm items-center justify-center sm:h-[510px]">
+			{#if isLoadingMore && swipeCards.length === 0}
+				<div
+					class="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl"
+				>
+					<span class="mb-3 animate-bounce text-4xl">🍿</span>
+					<p class="text-sm font-bold text-gray-300">กำลังเตรียมการ์ดให้ปัด...</p>
 				</div>
+			{:else if swipeCards[currentIndex]}
+				{@const currentCard = swipeCards[currentIndex]}
+				{@const nextCardItem = swipeCards[currentIndex + 1]}
 
-				<!-- พื้นที่กองการ์ด -->
-				<div class="relative flex h-[470px] w-full max-w-sm items-center justify-center sm:h-[510px]">
-					{#if isLoadingMore && swipeCards.length === 0}
+				<!-- การ์ดใบถัดไป (ซ้อนอยู่ด้านหลัง) -->
+				{#if nextCardItem}
+					<div
+						class="pointer-events-none absolute inset-0 scale-95 overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 opacity-50 shadow-xl transition-transform duration-300"
+					>
+						<img
+							src={`https://image.tmdb.org/t/p/w500${nextCardItem.poster_path}`}
+							alt={nextCardItem.title || nextCardItem.name}
+							class="h-full w-full object-cover"
+							draggable="false"
+						/>
 						<div
-							class="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 text-center backdrop-blur-xl"
-						>
-							<span class="mb-3 animate-bounce text-4xl">🍿</span>
-							<p class="text-sm font-bold text-gray-300">กำลังเตรียมการ์ดให้ปัด...</p>
-						</div>
-					{:else if swipeCards[currentIndex]}
-						{@const currentCard = swipeCards[currentIndex]}
-						{@const nextCardItem = swipeCards[currentIndex + 1]}
-
-						<!-- การ์ดใบถัดไป (ซ้อนอยู่ด้านหลัง) -->
-						{#if nextCardItem}
-							<div
-								class="pointer-events-none absolute inset-0 scale-95 overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 opacity-50 shadow-xl transition-transform duration-300"
-							>
-								<img
-									src={`https://image.tmdb.org/t/p/w500${nextCardItem.poster_path}`}
-									alt={nextCardItem.title || nextCardItem.name}
-									class="h-full w-full object-cover"
-									draggable="false"
-								/>
-								<div
-									class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"
-								></div>
-							</div>
-						{/if}
-
-						<!-- การ์ดใบปัจจุบัน (ลาก/ปัดได้) -->
-						<div
-							onmousedown={handleDragStart}
-							ontouchstart={handleDragStart}
-							ontouchmove={handleDragMove}
-							ontouchend={handleDragEnd}
-							style="transform: translateX({currentX}px) rotate({currentX * 0.05}deg); transition: {isDragging
-								? 'none'
-								: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'};"
-							class="relative z-10 h-full w-full cursor-grab overflow-hidden rounded-3xl border border-white/20 bg-neutral-900 shadow-[0_20px_50px_rgba(0,0,0,0.85)] active:cursor-grabbing"
-						>
-							<img
-								src={`https://image.tmdb.org/t/p/w500${currentCard.poster_path}`}
-								alt={currentCard.title || currentCard.name}
-								class="pointer-events-none h-full w-full object-cover"
-								draggable="false"
-							/>
-
-							<!-- แถบเงาดำด้านล่างให้อ่านตัวหนังสือชัด -->
-							<div
-								class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"
-							></div>
-
-							<!-- ป้าย STAMP ตอนปัดขวา (เก็บเข้าคลัง) -->
-							{#if currentX > 25}
-								<div
-									style="opacity: {Math.min((currentX - 25) / 75, 1)};"
-									class="pointer-events-none absolute top-8 left-6 -rotate-12 rounded-xl border-4 border-emerald-400 bg-black/50 px-4 py-1 text-2xl font-black tracking-widest text-emerald-400 uppercase backdrop-blur-sm"
-								>
-									LIKE
-								</div>
-							{/if}
-
-							<!-- ป้าย STAMP ตอนปัดซ้าย (ข้าม) -->
-							{#if currentX < -25}
-								<div
-									style="opacity: {Math.min((-currentX - 25) / 75, 1)};"
-									class="pointer-events-none absolute top-8 right-6 rotate-12 rounded-xl border-4 border-rose-500 bg-black/50 px-4 py-1 text-2xl font-black tracking-widest text-rose-500 uppercase backdrop-blur-sm"
-								>
-									NOPE
-								</div>
-							{/if}
-
-							<!-- ข้อมูลเรื่องบนการ์ด -->
-							<div class="absolute inset-x-0 bottom-0 p-6">
-								<div class="mb-2 flex items-center gap-2">
-									<span
-										class="rounded-lg border border-yellow-400/30 bg-black/60 px-2.5 py-1 text-xs font-bold text-yellow-300 backdrop-blur-md"
-									>
-										⭐ IMDB {currentCard.vote_average ? currentCard.vote_average.toFixed(1) : 'N/A'}
-									</span>
-									{#if currentCard.release_date || currentCard.first_air_date}
-										<span
-											class="rounded-lg border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-semibold text-gray-200 backdrop-blur-md"
-										>
-											{(currentCard.release_date || currentCard.first_air_date)?.split('-')[0]}
-										</span>
-									{/if}
-								</div>
-
-								<h3 class="mb-1.5 line-clamp-2 text-2xl font-black text-white drop-shadow">
-									{currentCard.title || currentCard.name}
-								</h3>
-
-								<p class="line-clamp-2 text-xs leading-relaxed text-gray-300">
-									{currentCard.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อ'}
-								</p>
-							</div>
-						</div>
-					{:else}
-						<div
-							class="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl"
-						>
-							<p class="mb-4 text-sm text-gray-300">หมดการ์ดในกองแล้ว โหลดเพิ่มได้เลย</p>
-							<button
-								type="button"
-								onclick={fetchMoreSwipeCards}
-								class="cursor-pointer rounded-full bg-white px-6 py-2.5 text-xs font-bold text-black transition-transform active:scale-95"
-							>
-								โหลดการ์ดเพิ่ม
-							</button>
-						</div>
-					{/if}
-				</div>
-
-				<!-- ปุ่มควบคุมด้านล่าง (ข้าม / ดูรายละเอียด / เก็บเข้าคลัง) -->
-				{#if swipeCards[currentIndex]}
-					{@const activeCard = swipeCards[currentIndex]}
-					<div class="mt-6 flex items-center justify-center gap-5">
-						<!-- ปุ่มข้าม (ปัดซ้าย) -->
-						<button
-							type="button"
-							onclick={nextCard}
-							title="ไม่สนใจ (ข้าม)"
-							class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-rose-500 hover:text-white active:scale-95"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2.5"
-								stroke="currentColor"
-								class="h-7 w-7"
-							>
-								<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
-							</svg>
-						</button>
-
-						<!-- ปุ่มดูรายละเอียด & ตัวอย่าง -->
-						<button
-							type="button"
-							onclick={() => openMovieDetails(activeCard.id, mediaType)}
-							title="ดูรายละเอียด / ตัวอย่าง"
-							class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-white/25 active:scale-95"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								fill="none"
-								viewBox="0 0 24 24"
-								stroke-width="2"
-								stroke="currentColor"
-								class="h-5 w-5"
-							>
-								<path
-									stroke-linecap="round"
-									stroke-linejoin="round"
-									d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
-								/>
-							</svg>
-						</button>
-
-						<!-- ปุ่มเก็บเข้าคลัง (ปัดขวา) -->
-						<button
-							type="button"
-							onclick={() => {
-								if (!savedMovies.some((m: any) => m.id === activeCard.id)) {
-									savedMovies.push(activeCard);
-									syncLocalStorage();
-								}
-								nextCard();
-							}}
-							title="เก็บเข้าคลังที่ปัดไว้"
-							class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/15 text-emerald-400 shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-emerald-500 hover:text-white active:scale-95"
-						>
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								viewBox="0 0 24 24"
-								fill="currentColor"
-								class="h-7 w-7"
-							>
-								<path
-									d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z"
-								/>
-							</svg>
-						</button>
+							class="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent"
+						></div>
 					</div>
 				{/if}
+
+				<!-- การ์ดใบปัจจุบัน (ลาก/ปัดได้) -->
+				<div
+					onmousedown={handleDragStart}
+					ontouchstart={handleDragStart}
+					ontouchmove={handleDragMove}
+					ontouchend={handleDragEnd}
+					style="transform: translateX({currentX}px) rotate({currentX *
+						0.05}deg); transition: {isDragging
+						? 'none'
+						: 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)'};"
+					class="relative z-10 h-full w-full cursor-grab overflow-hidden rounded-3xl border border-white/20 bg-neutral-900 shadow-[0_20px_50px_rgba(0,0,0,0.85)] active:cursor-grabbing"
+				>
+					<img
+						src={`https://image.tmdb.org/t/p/w500${currentCard.poster_path}`}
+						alt={currentCard.title || currentCard.name}
+						class="pointer-events-none h-full w-full object-cover"
+						draggable="false"
+					/>
+
+					<!-- แถบเงาดำด้านล่างให้อ่านตัวหนังสือชัด -->
+					<div
+						class="pointer-events-none absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent"
+					></div>
+
+					<!-- ป้าย STAMP ตอนปัดขวา (เก็บเข้าคลัง) -->
+					{#if currentX > 25}
+						<div
+							style="opacity: {Math.min((currentX - 25) / 75, 1)};"
+							class="pointer-events-none absolute top-8 left-6 -rotate-12 rounded-xl border-4 border-emerald-400 bg-black/50 px-4 py-1 text-2xl font-black tracking-widest text-emerald-400 uppercase backdrop-blur-sm"
+						>
+							LIKE
+						</div>
+					{/if}
+
+					<!-- ป้าย STAMP ตอนปัดซ้าย (ข้าม) -->
+					{#if currentX < -25}
+						<div
+							style="opacity: {Math.min((-currentX - 25) / 75, 1)};"
+							class="pointer-events-none absolute top-8 right-6 rotate-12 rounded-xl border-4 border-rose-500 bg-black/50 px-4 py-1 text-2xl font-black tracking-widest text-rose-500 uppercase backdrop-blur-sm"
+						>
+							NOPE
+						</div>
+					{/if}
+
+					<!-- ข้อมูลเรื่องบนการ์ด -->
+					<div class="absolute inset-x-0 bottom-0 p-6">
+						<div class="mb-2 flex items-center gap-2">
+							<span
+								class="rounded-lg border border-yellow-400/30 bg-black/60 px-2.5 py-1 text-xs font-bold text-yellow-300 backdrop-blur-md"
+							>
+								⭐ IMDB {currentCard.vote_average ? currentCard.vote_average.toFixed(1) : 'N/A'}
+							</span>
+							{#if currentCard.release_date || currentCard.first_air_date}
+								<span
+									class="rounded-lg border border-white/15 bg-black/60 px-2.5 py-1 text-xs font-semibold text-gray-200 backdrop-blur-md"
+								>
+									{(currentCard.release_date || currentCard.first_air_date)?.split('-')[0]}
+								</span>
+							{/if}
+						</div>
+
+						<h3 class="mb-1.5 line-clamp-2 text-2xl font-black text-white drop-shadow">
+							{currentCard.title || currentCard.name}
+						</h3>
+
+						<p class="line-clamp-2 text-xs leading-relaxed text-gray-300">
+							{currentCard.overview || 'ไม่มีคำอธิบายเนื้อเรื่องย่อ'}
+						</p>
+					</div>
+				</div>
+			{:else}
+				<div
+					class="flex h-full w-full flex-col items-center justify-center rounded-3xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl"
+				>
+					<p class="mb-4 text-sm text-gray-300">หมดการ์ดในกองแล้ว โหลดเพิ่มได้เลย</p>
+					<button
+						type="button"
+						onclick={fetchMoreSwipeCards}
+						class="cursor-pointer rounded-full bg-white px-6 py-2.5 text-xs font-bold text-black transition-transform active:scale-95"
+					>
+						โหลดการ์ดเพิ่ม
+					</button>
+				</div>
+			{/if}
+		</div>
+
+		<!-- ปุ่มควบคุมด้านล่าง (ข้าม / ดูรายละเอียด / เก็บเข้าคลัง) -->
+		{#if swipeCards[currentIndex]}
+			{@const activeCard = swipeCards[currentIndex]}
+			<div class="mt-6 flex items-center justify-center gap-5">
+				<!-- ปุ่มข้าม (ปัดซ้าย) -->
+				<button
+					type="button"
+					onclick={nextCard}
+					title="ไม่สนใจ (ข้าม)"
+					class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/15 text-rose-400 shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-rose-500 hover:text-white active:scale-95"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.5"
+						stroke="currentColor"
+						class="h-7 w-7"
+					>
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+					</svg>
+				</button>
+
+				<!-- ปุ่มดูรายละเอียด & ตัวอย่าง -->
+				<button
+					type="button"
+					onclick={() => openMovieDetails(activeCard.id, mediaType)}
+					title="ดูรายละเอียด / ตัวอย่าง"
+					class="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full border border-white/20 bg-white/10 text-white shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-white/25 active:scale-95"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2"
+						stroke="currentColor"
+						class="h-5 w-5"
+					>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="m11.25 11.25.041-.02a.75.75 0 0 1 1.063.852l-.708 2.836a.75.75 0 0 0 1.063.853l.041-.021M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9-3.75h.008v.008H12V8.25Z"
+						/>
+					</svg>
+				</button>
+
+				<!-- ปุ่มเก็บเข้าคลัง (ปัดขวา) -->
+				<button
+					type="button"
+					onclick={() => {
+						if (!savedMovies.some((m: any) => m.id === activeCard.id)) {
+							savedMovies.push(activeCard);
+							syncLocalStorage();
+						}
+						nextCard();
+					}}
+					title="เก็บเข้าคลังที่ปัดไว้"
+					class="flex h-14 w-14 cursor-pointer items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-500/15 text-emerald-400 shadow-lg backdrop-blur-md transition-all hover:scale-110 hover:bg-emerald-500 hover:text-white active:scale-95"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						class="h-7 w-7"
+					>
+						<path
+							d="m11.645 20.91-.007-.003-.022-.012a15.247 15.247 0 0 1-.383-.218 25.18 25.18 0 0 1-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0 1 12 5.052 5.5 5.5 0 0 1 16.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 0 1-4.244 3.17 15.247 15.247 0 0 1-.383.219l-.022.012-.007.004-.003.001a.752.752 0 0 1-.704 0l-.003-.001Z"
+						/>
+					</svg>
+				</button>
 			</div>
 		{/if}
+	</div>
+{/if}
 
 <style>
 	@keyframes shake {
