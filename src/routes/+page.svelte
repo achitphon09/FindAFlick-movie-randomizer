@@ -2193,61 +2193,164 @@
 					รอสักครู่นะครับพี่...
 				</div>
 			{:else if movies.length > 0}
-				<div class="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-					{#each movies as movie, index}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
-						<div
-							onclick={() => openMovieDetails(movie.id, mediaType)}
-							class="group fade-in-card flex cursor-pointer flex-col overflow-hidden rounded-2xl border
-							border-white/10 bg-white/5 shadow-lg backdrop-blur-md transition-all duration-300
-							hover:-translate-y-2 {mediaType === 'movie'
-								? 'hover:border-red-400/50 hover:shadow-[0_0_25px_rgba(248,113,113,0.15)]'
-								: 'hover:border-cyan-400/50 hover:shadow-[0_0_25px_rgba(6,182,212,0.15)]'} hover:bg-white/10"
-							style="animation-delay: {(index % 10) * 50}ms;"
-						>
-							<div class="relative aspect-[2/3] w-full overflow-hidden bg-black/40">
-								{#if movie.poster_path}
-									<img
-										src="https://image.tmdb.org/t/p/w500{movie.poster_path}"
-										alt={movie.title || movie.name}
-										class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-										loading="lazy"
-									/>
-								{:else}
-									<div
-										class="flex h-full items-center justify-center p-4 text-center text-xs text-gray-500"
-									>
-										ไม่มีรูปภาพโปสเตอร์
-									</div>
-								{/if}
+				<div class="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-5">
+	{#each movies as movie, index}
+		{@const isSaved = savedMovies.some((m: any) => m.id === movie.id)}
+		{@const releaseYear = (movie.release_date || movie.first_air_date)?.split('-')[0]}
+		{@const genreLabel = getSlideGenres(movie.genre_ids)}
 
-								<div
-									class="absolute top-2 right-2 rounded-lg border border-white/20 bg-black/50 px-2.5 py-1 text-xs font-bold text-yellow-400 shadow-sm backdrop-blur-md"
-								>
-									⭐ IMDB {movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}
-								</div>
-							</div>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div
+			onclick={() => openMovieDetails(movie.id, mediaType)}
+			class="group fade-in-card relative aspect-[2/3] w-full cursor-pointer overflow-hidden rounded-2xl border border-white/10 bg-neutral-900 shadow-[0_10px_30px_rgba(0,0,0,0.65)] transition-all duration-500 hover:-translate-y-2 {mediaType ===
+			'movie'
+				? 'hover:border-red-500/50 hover:shadow-[0_16px_36px_rgba(239,68,68,0.28)]'
+				: 'hover:border-cyan-400/50 hover:shadow-[0_16px_36px_rgba(6,182,212,0.28)]'}"
+			style="animation-delay: {(index % 10) * 50}ms;"
+		>
+			<!-- แสงวิบวับพาดผ่านการ์ดตอน Hover (Glass Shine Sweep) -->
+			<div
+				class="pointer-events-none absolute inset-0 z-20 -translate-x-full bg-gradient-to-r from-transparent via-white/15 to-transparent transition-transform duration-1000 ease-out group-hover:translate-x-full"
+			></div>
 
-							<div
-								class="flex flex-grow cursor-pointer flex-col justify-between border-t border-white/5 bg-black/20 p-4"
-							>
-								<h3
-									class="mb-1 line-clamp-1 text-sm font-semibold text-white transition-colors {mediaType ===
-									'movie'
-										? 'group-hover:text-red-500'
-										: 'group-hover:text-cyan-400'}"
-									title={movie.title || movie.name}
-								>
-									{movie.title || movie.name}
-								</h3>
-								<p class="line-clamp-2 text-xs leading-relaxed text-gray-400">
-									{movie.overview || 'ยังไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
-								</p>
-							</div>
-						</div>
-					{/each}
+			<!-- ภาพโปสเตอร์เต็มใบ -->
+			{#if movie.poster_path}
+				<img
+					src="https://image.tmdb.org/t/p/w500{movie.poster_path}"
+					alt={movie.title || movie.name}
+					class="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+					loading="lazy"
+				/>
+			{:else}
+				<div
+					class="flex h-full items-center justify-center bg-neutral-900 p-4 text-center text-xs text-gray-500"
+				>
+					ไม่มีรูปภาพโปสเตอร์
 				</div>
+			{/if}
+
+			<!-- ไล่เงาดำด้านบนและด้านล่างให้อ่านตัวหนังสือชัด -->
+			<div
+				class="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/55 via-transparent to-black/95 transition-opacity duration-300"
+			></div>
+			<div
+				class="pointer-events-none absolute inset-0 bg-black/30 opacity-0 backdrop-blur-[1px] transition-opacity duration-300 group-hover:opacity-100"
+			></div>
+
+			<!-- แถบบน: ปุ่มเซฟด่วน (ซ้าย) + คะแนน IMDB (ขวา) -->
+			<div class="absolute inset-x-2.5 top-2.5 z-10 flex items-center justify-between gap-2">
+				<!-- ปุ่มเพิ่ม/ลบออกจากคลังทันที -->
+				<button
+					type="button"
+					onclick={(e) => {
+						e.stopPropagation();
+						toggleCarouselWatchlist(movie);
+					}}
+					title={isSaved ? 'อยู่ในคลังแล้ว (กดเพื่อนำออก)' : 'บันทึกเข้าคลัง'}
+					aria-label={isSaved ? 'นำออกจากคลัง' : 'บันทึกเข้าคลัง'}
+					class="flex h-8 w-8 cursor-pointer items-center justify-center rounded-xl border backdrop-blur-md transition-all duration-200 hover:scale-110 active:scale-95 {isSaved
+						? 'border-emerald-400/50 bg-emerald-500/25 text-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.35)]'
+						: 'border-white/15 bg-black/50 text-white/80 hover:border-white/40 hover:bg-black/75 hover:text-white'}"
+				>
+					{#if isSaved}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+							class="h-4 w-4"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					{:else}
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							viewBox="0 0 20 20"
+							fill="currentColor"
+							class="h-4 w-4"
+						>
+							<path
+								fill-rule="evenodd"
+								d="M10 2c-1.716 0-3.408.106-5.07.31C3.806 2.45 3 3.414 3 4.517V17.25a.75.75 0 0 0 1.075.676L10 15.082l5.925 2.844A.75.75 0 0 0 17 17.25V4.517c0-1.103-.806-2.068-1.93-2.207A41.403 41.403 0 0 0 10 2Z"
+								clip-rule="evenodd"
+							/>
+						</svg>
+					{/if}
+				</button>
+
+				<!-- ป้ายคะแนน IMDB -->
+				<div
+					class="flex items-center gap-1 rounded-xl border border-white/15 bg-black/55 px-2.5 py-1 text-[11px] font-extrabold text-yellow-400 shadow-sm backdrop-blur-md"
+				>
+					<span>⭐</span>
+					<span>{movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A'}</span>
+				</div>
+			</div>
+
+			<!-- แถบข้อมูลด้านล่าง (เลื่อนขยายโชว์เรื่องย่อและปุ่มกดตอน Hover) -->
+			<div class="absolute inset-x-0 bottom-0 z-10 flex flex-col justify-end p-3.5 sm:p-4">
+				<!-- ปีที่ฉาย + หมวดหมู่ย่อ -->
+				<div class="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold tracking-wide text-gray-300">
+					{#if releaseYear}
+						<span class="rounded-md border border-white/15 bg-white/10 px-1.5 py-0.5 backdrop-blur-sm">
+							{releaseYear}
+						</span>
+					{/if}
+					{#if genreLabel}
+						<span class="line-clamp-1 text-gray-300/90">{genreLabel.split(' • ')[0]}</span>
+					{/if}
+				</div>
+
+				<!-- ชื่อเรื่อง -->
+				<h3
+					class="line-clamp-1 text-sm font-extrabold text-white drop-shadow-md transition-colors duration-300 group-hover:line-clamp-2 sm:text-base {mediaType ===
+					'movie'
+						? 'group-hover:text-red-400'
+						: 'group-hover:text-cyan-300'}"
+					title={movie.title || movie.name}
+				>
+					{movie.title || movie.name}
+				</h3>
+
+				<!-- ส่วนขยายตอน Hover: เรื่องย่อ + ปุ่มดูรายละเอียด -->
+				<div
+					class="grid grid-rows-[0fr] opacity-0 transition-all duration-300 ease-out group-hover:mt-2 group-hover:grid-rows-[1fr] group-hover:opacity-100"
+				>
+					<div class="overflow-hidden">
+						<p class="mb-2.5 line-clamp-2 text-[11px] leading-relaxed text-gray-300">
+							{movie.overview || 'ยังไม่มีคำอธิบายเนื้อเรื่องย่อ...'}
+						</p>
+
+						<div
+							class="flex w-full items-center justify-center gap-1.5 rounded-xl py-1.5 text-xs font-extrabold text-white shadow-md transition-colors {mediaType ===
+							'movie'
+								? 'bg-gradient-to-r from-red-600 to-orange-500'
+								: 'bg-gradient-to-r from-cyan-500 to-blue-600'}"
+						>
+							<span>ดูรายละเอียด</span>
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 20 20"
+								fill="currentColor"
+								class="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5"
+							>
+								<path
+									fill-rule="evenodd"
+									d="M3 10a.75.75 0 0 1 .75-.75h10.638L10.23 5.29a.75.75 0 1 1 1.04-1.08l5.5 5.25a.75.75 0 0 1 0 1.08l-5.5 5.25a.75.75 0 1 1-1.04-1.08l4.158-3.96H3.75A.75.75 0 0 1 3 10Z"
+									clip-rule="evenodd"
+								/>
+							</svg>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	{/each}
+</div>
 
 				<!-- Pagination -->
 				<div class="my-8 flex flex-wrap items-center justify-center gap-3 px-4 md:my-10 md:gap-4">
